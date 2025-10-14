@@ -1,100 +1,175 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+
+import { useAuth } from "@/components/providers/auth-provider"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { ApiError } from "@/lib/api"
+
+const loginSchema = z.object({
+  email: z.string().email("请输入有效的邮箱地址"),
+  password: z.string().min(6, "密码至少 6 位字符"),
+  rememberMe: z.boolean().default(true),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const router = useRouter()
+  const { loginWithEmail, loading } = useAuth()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("[v0] Login attempt:", { email })
-    router.push("/workspace")
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: true,
+    },
+  })
+
+  const handleSubmit = async (values: LoginFormValues) => {
+    try {
+      setSubmitError(null)
+      await loginWithEmail(values)
+      router.push("/workspace")
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setSubmitError(error.message)
+        return
+      }
+
+      if (error instanceof Error) {
+        setSubmitError(error.message)
+      } else {
+        setSubmitError("登录失败，请稍后重试")
+      }
+    }
   }
 
   return (
     <div className="min-h-screen gradient-background flex items-center justify-center px-6 py-12">
-      {/* Logo */}
       <Link href="/" className="fixed top-8 left-8 text-2xl font-bold text-white hover:opacity-80 transition-opacity">
         DragonAI
       </Link>
 
-      {/* Login Card */}
       <div className="w-full max-w-md animate-fade-in-up">
         <div className="glass-card rounded-3xl p-8 md:p-10 shadow-2xl">
-          {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">欢迎回来</h1>
             <p className="text-white/60 text-sm">登录您的账户以继续使用</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Input */}
-            <div className="space-y-2">
-              <label className="text-sm text-white/80 font-medium">邮箱地址</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:bg-white/10 focus:border-orange-500/50 transition-all"
-                  required
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-white/80 font-medium">邮箱地址</FormLabel>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="your@email.com"
+                          className="w-full h-12 pl-12 pr-4 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:bg-white/10 focus:border-orange-500/50 transition-all"
+                          {...field}
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-white/80 font-medium">密码</FormLabel>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+                      <FormControl>
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="w-full h-12 pl-12 pr-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:bg-white/10 focus:border-orange-500/50 transition-all"
+                          {...field}
+                        />
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex items-center justify-between text-sm">
+                <FormField
+                  control={form.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-white/70">记住我</FormLabel>
+                    </FormItem>
+                  )}
                 />
+                <Link href="/forgot-password" className="text-orange-400 hover:text-orange-300 transition-colors">
+                  忘记密码？
+                </Link>
               </div>
-            </div>
 
-            {/* Password Input */}
-            <div className="space-y-2">
-              <label className="text-sm text-white/80 font-medium">密码</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-12 pl-12 pr-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:bg-white/10 focus:border-orange-500/50 transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
+              {submitError ? <p className="text-sm text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-lg px-4 py-2">{submitError}</p> : null}
 
-            {/* Forgot Password */}
-            <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-sm text-orange-400 hover:text-orange-300 transition-colors">
-                忘记密码？
-              </Link>
-            </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-orange-500/50 disabled:opacity-70 disabled:hover:scale-100"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    登录中...
+                  </span>
+                ) : (
+                  "登录"
+                )}
+              </Button>
+            </form>
+          </Form>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-orange-500/50"
-            >
-              登录
-            </Button>
-          </form>
-
-          {/* Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/10"></div>
@@ -104,7 +179,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Social Login */}
           <div className="space-y-3">
             <Button
               type="button"
@@ -133,7 +207,6 @@ export default function LoginPage() {
             </Button>
           </div>
 
-          {/* Sign Up Link */}
           <div className="mt-8 text-center">
             <p className="text-sm text-white/60">
               还没有账户？{" "}

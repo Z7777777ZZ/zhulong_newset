@@ -1,14 +1,30 @@
 // API服务层 - 封装所有HTTP请求逻辑
 import { toast } from "sonner"
+import { clearStoredToken, getStoredToken } from "./token-storage"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
 
-// 请求拦截器：添加认证头
-const getAuthHeaders = (): HeadersInit => {
-  const token = localStorage.getItem('token')
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+export interface ApiEnvelope<T> {
+  success: boolean
+  message: string
+  data: T
+}
+
+export class ApiError<T = unknown> extends Error {
+  status: number
+  payload: T | null
+
+  constructor(message: string, status: number, payload: T | null = null) {
+    super(message)
+    this.status = status
+    this.payload = payload
   }
+}
+
+// 请求拦截器：添加认证头
+const getAuthHeaders = (): Record<string, string> => {
+  const token = getStoredToken()
+  const headers: Record<string, string> = {}
 
   if (token) {
     headers.Authorization = `Bearer ${token}`
@@ -18,13 +34,13 @@ const getAuthHeaders = (): HeadersInit => {
 }
 
 // 响应拦截器：统一错误处理
-const handleResponse = async (response: Response) => {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+const parseJson = async <T>(response: Response): Promise<T | null> => {
+  const contentType = response.headers.get('content-type')
+  if (contentType && contentType.includes('application/json')) {
+    return response.json().catch(() => null)
   }
 
-  return response.json()
+  return null
 }
 
 // API请求封装
@@ -32,25 +48,69 @@ class ApiService {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<T> {
+  ): Promise<ApiEnvelope<T>> {
     const url = `${API_BASE_URL}${endpoint}`
+
+    const body = options.body
+    const defaultHeaders: Record<string, string> = {
+      ...getAuthHeaders(),
+    }
+
+    if (body && !(body instanceof FormData)) {
+      defaultHeaders['Content-Type'] = 'application/json'
+    }
 
     const config: RequestInit = {
       ...options,
       headers: {
-        ...getAuthHeaders(),
+        ...defaultHeaders,
         ...options.headers,
       },
     }
 
     try {
       const response = await fetch(url, config)
-      return await handleResponse(response)
+      if (!response.ok) {
+        const payload = await parseJson<ApiEnvelope<unknown>>(response)
+        const message = payload?.message || `HTTP ${response.status}: ${response.statusText}`
+
+        if (response.status === 401) {
+          clearStoredToken()
+        }
+
+        if (response.status !== 401) {
+          toast.error(message)
+        }
+
+        throw new ApiError(message, response.status, payload)
+      }
+
+      const payload = await parseJson<ApiEnvelope<T>>(response)
+      if (!payload) {
+        return { success: true, message: '', data: null as T }
+      }
+
+      if (!payload.success) {
+        const message = payload.message || '接口请求失败'
+        toast.error(message)
+        throw new ApiError(message, response.status, payload)
+      }
+
+      return payload
     } catch (error) {
       console.error(`API请求失败 [${endpoint}]:`, error)
 
       // 显示用户友好的错误提示
-      if (error instanceof Error) {
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          toast.error('登录状态已失效，请重新登录')
+        }
+        // 已经在上面显示过错误了，不需要重复显示
+      } else if (error instanceof TypeError && error.message.includes('fetch')) {
+        // 网络错误，可能是CORS或网络不可达
+        const errorMessage = `无法连接到服务器 (${API_BASE_URL})\n\n可能原因:\n1. 后端服务未启动\n2. CORS配置问题\n3. 网络连接问题`
+        toast.error(errorMessage, { duration: 5000 })
+      } else if (error instanceof Error) {
         toast.error(error.message)
       } else {
         toast.error('网络请求失败，请检查网络连接')
@@ -61,15 +121,24 @@ class ApiService {
   }
 
   // GET请求
-  async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
-    const searchParams = params ? new URLSearchParams(params).toString() : ''
+  async get<T>(endpoint: string, params?: Record<string, any | undefined>): Promise<ApiEnvelope<T>> {
+    const searchParams = params
+      ? new URLSearchParams(
+          Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
+            if (value !== undefined && value !== null) {
+              acc[key] = String(value)
+            }
+            return acc
+          }, {})
+        ).toString()
+      : ''
     const url = searchParams ? `${endpoint}?${searchParams}` : endpoint
 
     return this.request<T>(url, { method: 'GET' })
   }
 
   // POST请求
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: any): Promise<ApiEnvelope<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
@@ -77,7 +146,7 @@ class ApiService {
   }
 
   // PUT请求
-  async put<T>(endpoint: string, data?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: any): Promise<ApiEnvelope<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
@@ -85,8 +154,15 @@ class ApiService {
   }
 
   // DELETE请求
-  async delete<T>(endpoint: string): Promise<T> {
+  async delete<T>(endpoint: string): Promise<ApiEnvelope<T>> {
     return this.request<T>(endpoint, { method: 'DELETE' })
+  }
+
+  async postForm<T>(endpoint: string, data: FormData): Promise<ApiEnvelope<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data,
+    })
   }
 }
 
@@ -138,6 +214,36 @@ export interface UserInfoResponse {
   dailyLimit: number
 }
 
+export interface UserProfileResponse {
+  id: number
+  username: string
+  email: string
+  phone?: string
+  avatar?: string
+  role: string
+  registerTime: string
+  lastLoginTime?: string
+  totalQuota: number
+  usedQuota: number
+  remainingQuota: number
+  dailyFreeQuota: number
+  detectionCount: number
+  memberDays: number
+}
+
+export interface DashboardStatsResponse {
+  imageCounts: string
+  textCounts: string
+  videoCounts: string
+  audioCounts: string
+  imageTrend: number
+  textTrend: number
+  videoTrend: number
+  audioTrend: number
+  averageAccuracy: number
+  accuracyTrend: number
+}
+
 // 检测相关接口
 export interface DetectionRequest {
   text?: string
@@ -185,6 +291,65 @@ export interface DetectionRecordResponse {
   content?: string
 }
 
+export interface DetectionRecord {
+  id: number
+  userId: number
+  detectionTypeId: number
+  fileUrl?: string
+  fileName?: string
+  fileSize?: number
+  content?: string
+  result: number
+  confidence: number
+  detectionTime: string
+  status: number
+  errorMessage?: string
+  analysis?: string
+  fragmentResults?: string
+  totalFragments?: number
+  aiFragments?: number
+  humanFragments?: number
+  uncertainFragments?: number
+}
+
+// 充值相关接口
+export interface RechargePackageResponse {
+  id: number
+  name: string
+  price: number
+  quota: number
+  validity: string
+  popular: boolean
+  features: string[]
+}
+
+export interface TransactionResponse {
+  id: string
+  date: string
+  packageName: string
+  quota: number
+  amount: number
+  paymentMethod: string
+  status: string
+}
+
+export interface AlipayQrCodeResponse {
+  success: boolean
+  outTradeNo: string
+  qrCode: string
+  code: string
+  msg: string
+}
+
+export interface AlipayOrderStatusResponse {
+  orderId: string
+  tradeNo: string
+  tradeStatus: 'WAIT_BUYER_PAY' | 'TRADE_SUCCESS' | 'TRADE_FINISHED' | 'TRADE_CLOSED'
+  totalAmount: number
+  buyerLogonId: string
+  isPaid: boolean
+}
+
 // 创建API服务实例
 export const apiService = new ApiService()
 
@@ -192,38 +357,42 @@ export const apiService = new ApiService()
 export const authApi = {
   // 用户名密码登录
   loginWithUsername: (data: LoginRequest) =>
-    apiService.post<{ success: boolean; message: string; data: JwtResponse }>('/auth/login', data),
+    apiService.post<JwtResponse>('/auth/login', data),
 
   // 邮箱密码登录
   loginWithEmail: (data: EmailLoginRequest) =>
-    apiService.post<{ success: boolean; message: string; data: JwtResponse }>('/auth/email-login', data),
+    apiService.post<JwtResponse>('/auth/email-login', data),
 
   // 用户注册
   register: (data: RegisterRequest) =>
-    apiService.post<{ success: boolean; message: string; data: string }>('/auth/register', data),
+    apiService.post<string>('/auth/register', data),
 
   // 发送邮箱验证码
   sendEmailVerification: (data: EmailVerificationRequest) =>
-    apiService.post<{ success: boolean; message: string; data: null }>('/auth/verify-email', data),
+    apiService.post<null>('/auth/verify-email', data),
 }
 
 // 用户API
 export const userApi = {
   // 获取用户信息与额度
   getUserInfo: () =>
-    apiService.get<{ success: boolean; message: string; data: UserInfoResponse }>('/user/info'),
+    apiService.get<UserInfoResponse>('/user/info'),
 
   // 获取个人资料
   getProfile: () =>
-    apiService.get<{ success: boolean; message: string; data: any }>('/profile'),
+    apiService.get<UserProfileResponse>('/profile'),
 
   // 更新个人资料
-  updateProfile: (data: any) =>
-    apiService.put<{ success: boolean; message: string; data: null }>('/profile', data),
+  updateProfile: (data: { username?: string; email?: string; phone?: string; avatar?: string }) =>
+    apiService.put<null>('/profile', data),
 
   // 修改密码
   updatePassword: (data: { currentPassword: string; newPassword: string }) =>
-    apiService.put<{ success: boolean; message: string; data: null }>('/profile/password', data),
+    apiService.put<null>('/profile/password', data),
+
+  // 获取仪表盘统计
+  getDashboardStats: () =>
+    apiService.get<DashboardStatsResponse>('/user/dashboard/stats'),
 }
 
 // 检测API
@@ -252,61 +421,68 @@ export const detectionApi = {
       formData.append('splitStrategy', data.splitStrategy)
     }
 
-    return apiService.request<{ success: boolean; message: string; data: DetectionResultResponse }>(
-      '/detection/detect',
-      {
-        method: 'POST',
-        body: formData,
-        headers: {
-          // Content-Type由浏览器自动设置，不需要手动设置
-        },
-      }
-    )
+    return apiService.postForm<DetectionResultResponse>('/detection/detect', formData)
   },
 
   // 查询近期检测记录
   getRecentDetections: (limit?: number) =>
-    apiService.get<{ success: boolean; message: string; data: any[] }>('/detection/recent', { limit }),
+    apiService.get<DetectionRecord[]>('/detection/recent', { limit }),
 }
 
 // 历史记录API
 export const historyApi = {
   // 查询全部检测历史
   getHistory: () =>
-    apiService.get<{ success: boolean; message: string; data: DetectionRecordResponse[] }>('/history'),
+    apiService.get<DetectionRecordResponse[]>('/history'),
 
   // 按类型筛选检测历史
   getHistoryByType: (typeId: number) =>
-    apiService.get<{ success: boolean; message: string; data: DetectionRecordResponse[] }>(`/history/type/${typeId}`),
+    apiService.get<DetectionRecordResponse[]>(`/history/type/${typeId}`),
 
   // 按时间范围筛选检测历史
   getHistoryByTimeRange: (timeRange: 'today' | 'week' | 'month' | 'all' = 'all') =>
-    apiService.get<{ success: boolean; message: string; data: DetectionRecordResponse[] }>('/history/time', { timeRange }),
+    apiService.get<DetectionRecordResponse[]>('/history/time', { timeRange }),
 
   // 按检测结果筛选历史
   getHistoryByResult: (result: 'ai' | 'human' | 'all' = 'all') =>
-    apiService.get<{ success: boolean; message: string; data: DetectionRecordResponse[] }>(`/history/result/${result}`),
+    apiService.get<DetectionRecordResponse[]>(`/history/result/${result}`),
 
   // 获取检测记录详情
   getHistoryDetail: (id: number) =>
-    apiService.get<{ success: boolean; message: string; data: DetectionRecordResponse }>(`/history/${id}`),
+    apiService.get<DetectionRecordResponse>(`/history/${id}`),
 
   // 删除检测记录
   deleteHistoryRecord: (id: number) =>
-    apiService.delete<{ success: boolean; message: string; data: null }>(`/history/${id}`),
+    apiService.delete<null>(`/history/${id}`),
 }
 
 // 充值API
 export const rechargeApi = {
   // 查询所有充值套餐
   getPackages: () =>
-    apiService.get<{ success: boolean; message: string; data: any[] }>('/recharge/packages'),
+    apiService.get<RechargePackageResponse[]>('/recharge/packages'),
+
+  // 查询套餐详情
+  getPackageDetail: (id: number) =>
+    apiService.get<RechargePackageResponse>(`/recharge/packages/${id}`),
 
   // 创建充值订单
   createOrder: (data: { packageId: number; paymentMethod: string }) =>
-    apiService.post<{ success: boolean; message: string; data: string }>('/recharge/order', data),
+    apiService.post<string>('/recharge/order', data),
+
+  // 创建支付宝扫码支付
+  createAlipayQrCode: (orderId: string) =>
+    apiService.post<AlipayQrCodeResponse>('/recharge/alipay/precreate', { orderId }),
+
+  // 查询支付宝订单状态
+  queryAlipayStatus: (orderId: string) =>
+    apiService.get<AlipayOrderStatusResponse>(`/recharge/alipay/query/${orderId}`),
+
+  // 取消订单
+  cancelOrder: (orderId: string) =>
+    apiService.post<null>(`/recharge/cancel/${orderId}`),
 
   // 查询充值交易记录
-  getTransactions: (filter?: string) =>
-    apiService.get<{ success: boolean; message: string; data: any[] }>('/recharge/transactions', { filter }),
+  getTransactions: (filter?: 'all' | '7days' | '30days' | '90days') =>
+    apiService.get<TransactionResponse[]>('/recharge/transactions', { filter }),
 }
