@@ -144,7 +144,7 @@ function WorkspaceContent() {
                         <div>
                           <h3 className="text-lg font-semibold text-white mb-1">配额使用</h3>
                           <p className="text-white/50 text-sm">
-                            已使用 {user.usedQuota} / {user.totalQuota} 次
+                            已使用 {user.usedQuota} / {user.totalQuota} credits
                           </p>
                         </div>
                         <div className="text-right">

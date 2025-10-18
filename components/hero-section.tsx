@@ -55,14 +55,14 @@ export function HeroSection() {
             <span className="text-sm text-white/80">✨ 全新 AI 检测体验</span>
           </div>
 
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white leading-none mb-4 max-w-4xl">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-none mb-4 max-w-4xl">
             重新定义
             <br />
-            文本真实性
+            AIGC检测置信度
           </h1>
 
           <p className="text-xl md:text-2xl text-white/60 max-w-2xl mb-8 leading-relaxed">
-            精准识别 AI 生成内容，智能改写提升原创度。让每一个字都经得起考验。
+            精准识别 AI 生成内容，智能改写提升原创度。让每一个创意都经得起时间的考验。
           </p>
 
           <div className="flex flex-col sm:flex-row items-start gap-4">
@@ -138,7 +138,7 @@ export function HeroSection() {
 
                   {/* Right side - Rewrite */}
                   <div className="space-y-4">
-                    <div className="text-white/60 text-sm font-medium mb-2">降重效果</div>
+                    <div className="text-white/60 text-sm font-medium mb-2">降AI效果</div>
                     <div className="space-y-3">
                       <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                         <div

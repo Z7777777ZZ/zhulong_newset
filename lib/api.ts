@@ -22,7 +22,7 @@ export class ApiError<T = unknown> extends Error {
 }
 
 // 不需要认证的接口列表
-const PUBLIC_ENDPOINTS = ['/auth/login', '/auth/email-login', '/auth/register', '/auth/verify-email']
+const PUBLIC_ENDPOINTS = ['/auth/login', '/auth/email-login', '/auth/register', '/auth/verify-email', '/auth/reset-password']
 
 // 请求拦截器：添加认证头
 const getAuthHeaders = (endpoint: string): Record<string, string> => {
@@ -48,11 +48,30 @@ const getAuthHeaders = (endpoint: string): Record<string, string> => {
   return headers
 }
 
-// 响应拦截器：统一错误处理
+// 后端响应格式（使用code字段）
+interface BackendResponse<T> {
+  code?: number
+  message: string
+  data: T
+  success?: boolean
+}
+
+// 响应拦截器：统一错误处理和格式转换
 const parseJson = async <T>(response: Response): Promise<T | null> => {
   const contentType = response.headers.get('content-type')
   if (contentType && contentType.includes('application/json')) {
-    return response.json().catch(() => null)
+    const json = await response.json().catch(() => null)
+    
+    // 如果后端返回的是 { code, message, data } 格式，转换为 { success, message, data }
+    if (json && 'code' in json && !('success' in json)) {
+      return {
+        success: json.code === 200,
+        message: json.message,
+        data: json.data
+      } as T
+    }
+    
+    return json
   }
 
   return null
@@ -86,6 +105,12 @@ class ApiService {
       allHeaders: defaultHeaders,
     })
 
+    // 设置超时时间：所有接口统一30秒
+    const timeoutMs = 30000
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
     const config: RequestInit = {
       ...options,
       headers: {
@@ -94,6 +119,7 @@ class ApiService {
       },
       // 确保credentials被发送，这对代理转发很重要
       credentials: 'include',
+      signal: controller.signal,
     }
 
     try {
@@ -104,16 +130,35 @@ class ApiService {
 
         if (response.status === 401) {
           console.error('401 Unauthorized - Token已过期，请重新登录')
-          clearStoredToken()
-          toast.error('登录已过期，请重新登录', {
-            duration: 3000,
-          })
-          // 延迟跳转到登录页，给用户足够时间查看错误信息
-          setTimeout(() => {
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login'
-            }
-          }, 3000)
+          
+          // 检测接口不立即跳转，给用户看到完整错误信息
+          const isDetectionRequest = endpoint.includes('/detection/detect')
+          
+          if (!isDetectionRequest) {
+            clearStoredToken()
+            toast.error('登录已过期，请重新登录', {
+              duration: 3000,
+            })
+            // 延迟跳转到登录页，给用户足够时间查看错误信息
+            setTimeout(() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/login'
+              }
+            }, 3000)
+          } else {
+            // 检测接口返回401，可能是处理超时或其他问题
+            toast.error('检测请求失败，可能是会话超时或文件处理失败', {
+              duration: 5000,
+            })
+          }
+        } else if (response.status === 507) {
+          // 文本内容太大
+          const message507 = payload?.message || '文本内容太大，无法处理。请尝试上传内容更少的文档或删减部分内容后重试'
+          if (!silent) {
+            toast.error(message507, {
+              duration: 6000,
+            })
+          }
         } else if (!silent) {
           // 只在非静默模式下显示错误提示
           toast.error(message, {
@@ -146,10 +191,16 @@ class ApiService {
 
       // 显示用户友好的错误提示
       if (error instanceof ApiError) {
-        if (error.status === 401) {
-          toast.error('登录状态已失效，请重新登录', { duration: 3000 })
-        }
         // 已经在上面显示过错误了，不需要重复显示
+      } else if (error instanceof Error && error.name === 'AbortError') {
+        // 请求超时
+        const timeoutSeconds = Math.round(timeoutMs / 1000)
+        const isDetectionRequest = endpoint.includes('/detection/detect')
+        const message = isDetectionRequest 
+          ? `检测超时（${timeoutSeconds}秒），文件可能过大或内容过多，请尝试上传较小的文件`
+          : `请求超时（${timeoutSeconds}秒），请检查网络连接后重试`
+        toast.error(message, { duration: 5000 })
+        throw new ApiError(message, 504, null)
       } else if (error instanceof TypeError && error.message.includes('fetch')) {
         // 网络错误，可能是CORS或网络不可达
         const errorMessage = `无法连接到服务器 (${API_BASE_URL})\n\n可能原因:\n1. 后端服务未启动\n2. CORS配置问题\n3. 网络连接问题`
@@ -161,6 +212,8 @@ class ApiService {
       }
 
       throw error
+    } finally {
+      clearTimeout(timeoutId)
     }
   }
 
@@ -259,6 +312,12 @@ export interface EmailVerificationRequest {
   email: string
 }
 
+export interface ResetPasswordRequest {
+  email: string
+  verificationCode: string
+  newPassword: string
+}
+
 export interface JwtResponse {
   token: string
   type: string
@@ -322,27 +381,36 @@ export interface DetectionRequest {
   splitStrategy?: 'paragraph' | 'semantic' | 'default' | 'sentence' | 'fixed'
 }
 
+// 句子级别的高亮标注
+export interface SentenceHighlight {
+  sentence: string
+  aiProbability: number
+  aiGenerated?: boolean
+  isAiGenerated?: boolean  // 兼容字段
+}
+
+// 分片检测结果
 export interface DetectionFragmentResult {
-  fragmentIndex: number
-  fragmentText: string
   text: string
   aiProbability: number
   humanProbability: number
   confidence: number
-  category: string
-  categoryDescription: string
-  categoryColor: string
+  category: 'ai' | 'human' | 'uncertain'
+  sentenceHighlights?: SentenceHighlight[]
+  perplexity?: number
+  burstiness?: number
 }
 
+// 文本检测响应
 export interface DetectionResultResponse {
   aiProbability: number
   analysis: string
-  fragments?: DetectionFragmentResult[]
+  fragmentAnalysis?: boolean
   totalFragments?: number
   aiFragments?: number
   humanFragments?: number
   uncertainFragments?: number
-  fragmentAnalysis?: boolean
+  fragments?: DetectionFragmentResult[]
 }
 
 // 历史记录相关接口
@@ -439,6 +507,10 @@ export const authApi = {
   // 发送邮箱验证码
   sendEmailVerification: (data: EmailVerificationRequest) =>
     apiService.post<null>('/auth/verify-email', data),
+
+  // 重置密码
+  resetPassword: (data: ResetPasswordRequest) =>
+    apiService.post<null>('/auth/reset-password', data),
 }
 
 // 用户API
@@ -554,4 +626,37 @@ export const rechargeApi = {
   // 查询充值交易记录
   getTransactions: (filter?: 'all' | '7days' | '30days' | '90days') =>
     apiService.get<TransactionResponse[]>('/recharge/transactions', { filter }),
+}
+
+// 文本人性化改写相关接口
+export interface HumanizeRequest {
+  data: string
+  model?: '0' | '1' | '2'
+}
+
+export interface HumanizeResult {
+  originalText: string
+  humanizedText: string
+  model: string
+  quotaUsed: number
+  remainingQuota: number
+}
+
+// 邀请码相关接口
+export interface UseInvitationCodeRequest {
+  code: string
+}
+
+// 文本改写API
+export const humanizeApi = {
+  // 文本人性化改写
+  humanize: (data: HumanizeRequest) =>
+    apiService.post<HumanizeResult>('/detection/humanize', data),
+}
+
+// 邀请码API
+export const invitationCodeApi = {
+  // 使用邀请码
+  useInvitationCode: (data: UseInvitationCodeRequest) =>
+    apiService.post<null>('/invitation-code/use', data),
 }

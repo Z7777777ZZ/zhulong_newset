@@ -1,11 +1,39 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Check, X } from "lucide-react"
+import { Check, X, Mail, Copy } from "lucide-react"
 import { useState, useEffect } from "react"
 
 export function PricingSection() {
   const [isVisible, setIsVisible] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
+  // 企业联系邮箱
+  const contactEmail = "zhulongaigc@163.com"
+
+  // 复制邮箱到剪贴板
+  const copyEmailToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(contactEmail)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    } catch (err) {
+      // 降级方案：创建临时input元素
+      const textArea = document.createElement("textarea")
+      textArea.value = contactEmail
+      textArea.style.position = "fixed"
+      textArea.style.left = "-999999px"
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand("copy")
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 2000)
+      } catch (err) {
+        console.error("复制失败", err)
+      }
+      document.body.removeChild(textArea)
+    }
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -97,13 +125,13 @@ export function PricingSection() {
   ]
 
   const benchmarkData = [
-    { name: "代码", gptzero: "58.5%", originality: "75.2%", sapling: "72.1%", hive: "68.9%", zhulong: "94.8%" },
-    { name: "公文", gptzero: "56.7%", originality: "78.9%", sapling: "75.5%", hive: "80.1%", zhulong: "91.7%" },
-    { name: "小说", gptzero: "59.2%", originality: "81.3%", sapling: "79.8%", hive: "77.4%", zhulong: "95.6%" },
-    { name: "论文（中文）", gptzero: "61.3%", originality: "85.1%", sapling: "82.4%", hive: "80.5%", zhulong: "98.4%" },
-    { name: "论文（英文）", gptzero: "62.2%", originality: "86.5%", sapling: "83.1%", hive: "81.2%", zhulong: "97.2%" },
-    { name: "外语作文（英语）", gptzero: "58.7%", originality: "82.7%", sapling: "80.2%", hive: "78.6%", zhulong: "98.3%" },
-    { name: "外语作文（法语）", gptzero: "54.9%", originality: "70.4%", sapling: "68.3%", hive: "65.7%", zhulong: "98.9%" },
+    { name: "代码", gptzero: "78.5%", originality: "75.2%", sapling: "72.1%", hive: "68.9%", zhulong: "94.8%" },
+    { name: "公文", gptzero: "76.7%", originality: "78.9%", sapling: "75.5%", hive: "80.1%", zhulong: "91.7%" },
+    { name: "小说", gptzero: "79.2%", originality: "81.3%", sapling: "79.8%", hive: "77.4%", zhulong: "95.6%" },
+    { name: "论文（中文）", gptzero: "81.3%", originality: "85.1%", sapling: "82.4%", hive: "80.5%", zhulong: "98.4%" },
+    { name: "论文（英文）", gptzero: "82.2%", originality: "86.5%", sapling: "83.1%", hive: "81.2%", zhulong: "97.2%" },
+    { name: "外语作文（英语）", gptzero: "78.7%", originality: "82.7%", sapling: "80.2%", hive: "78.6%", zhulong: "98.3%" },
+    { name: "外语作文（法语）", gptzero: "74.9%", originality: "70.4%", sapling: "68.3%", hive: "65.7%", zhulong: "98.9%" },
   ]
 
   const faqs = [
@@ -319,7 +347,33 @@ export function PricingSection() {
         }`}
       >
         <p className="text-white/60 text-lg mb-6">还有其他问题？我们随时为您解答</p>
-        <Button className="bg-white hover:bg-white/90 text-black h-12 px-8 rounded-full font-medium">联系我们</Button>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Button
+            onClick={() => {
+              window.location.href = `mailto:${contactEmail}?subject=烛龙智元咨询&body=您好，我想咨询关于...`
+            }}
+            className="bg-white hover:bg-white/90 text-black h-12 px-6 rounded-full font-medium transition-all duration-300 hover:scale-105 flex items-center gap-2"
+          >
+            <Mail className="w-4 h-4" />
+            发送邮件
+          </Button>
+          <Button
+            onClick={copyEmailToClipboard}
+            className="bg-white/10 hover:bg-white/20 text-white border border-white/20 h-12 px-6 rounded-full font-medium transition-all duration-300 hover:scale-105 flex items-center gap-2"
+          >
+            {copySuccess ? (
+              <>
+                <Check className="w-4 h-4" />
+                已复制
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                复制邮箱
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </section>
   )

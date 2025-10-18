@@ -90,9 +90,10 @@ export function useRecentDetections(limit = 5) {
   const fetchRecent = async () => {
     setLoading(true)
     try {
-      const response = await historyApi.getHistory()
-      // 取最近的几条
-      setRecords(response.data.slice(0, limit))
+      // 使用正确的近期检测记录API
+      const { detectionApi } = await import('@/lib/api')
+      const response = await detectionApi.getRecentDetections(limit)
+      setRecords(response.data)
     } catch (error) {
       console.error('获取近期记录失败:', error)
     } finally {

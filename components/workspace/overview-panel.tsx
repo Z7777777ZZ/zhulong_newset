@@ -3,6 +3,7 @@
 import { FileSearch, Image } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useRecentDetections } from '@/hooks/useHistory'
+import { UsageChart } from './usage-chart'
 
 export function OverviewPanel() {
   const { user } = useAuth()
@@ -15,15 +16,7 @@ export function OverviewPanel() {
       {/* 统计卡片 */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-          <div className="text-white/60 text-sm mb-2">今日检测</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-4xl font-bold text-white">{user.usedCount}</div>
-            <div className="text-white/40 text-lg">/ {user.dailyLimit}</div>
-          </div>
-        </div>
-
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-          <div className="text-white/60 text-sm mb-2">剩余额度</div>
+          <div className="text-white/60 text-sm mb-2">剩余credits</div>
           <div className="flex items-baseline gap-2">
             <div className="text-4xl font-bold text-white">{user.remainingQuota}</div>
             <div className="text-white/40 text-lg">/ {user.totalQuota}</div>
@@ -34,17 +27,13 @@ export function OverviewPanel() {
           <div className="text-white/60 text-sm mb-2">累计检测</div>
           <div className="flex items-baseline gap-2">
             <div className="text-4xl font-bold text-white">{user.usedQuota}</div>
-            <div className="text-white/40 text-lg">次</div>
-          </div>
-        </div>
-
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-          <div className="text-white/60 text-sm mb-2">用户角色</div>
-          <div className="flex items-baseline gap-2">
-            <div className="text-4xl font-bold text-white">{user.role}</div>
+            <div className="text-white/40 text-lg">credits</div>
           </div>
         </div>
       </div>
+
+      {/* 使用趋势图表 */}
+      <UsageChart />
 
       {/* 最近记录 */}
       <div>

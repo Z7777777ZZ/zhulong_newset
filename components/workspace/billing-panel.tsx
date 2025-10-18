@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, Zap, CreditCard, QrCode, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, Zap, CreditCard, QrCode, X, ChevronLeft, ChevronRight, Gift } from 'lucide-react'
 import { useRecharge, useAlipay } from '@/hooks/useRecharge'
 import { useAuth } from '@/components/providers/auth-provider'
 import { toast } from 'sonner'
@@ -20,6 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { invitationCodeApi, ApiError } from '@/lib/api'
 
 export function BillingPanel() {
   const { packages, transactions, loading, createOrder, fetchTransactions } = useRecharge()
@@ -31,6 +33,10 @@ export function BillingPanel() {
   const [timeFilter, setTimeFilter] = useState<'all' | '7days' | '30days' | '90days'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
+
+  // 邀请码相关状态
+  const [invitationCode, setInvitationCode] = useState('')
+  const [isUsingCode, setIsUsingCode] = useState(false)
 
   const { qrCode, createQrCode, queryStatus, cancelOrder } = useAlipay()
 
@@ -124,6 +130,51 @@ export function BillingPanel() {
     setShowPaymentDialog(open)
   }
 
+  // 使用邀请码
+  const handleUseInvitationCode = async () => {
+    const code = invitationCode.trim().toUpperCase()
+    
+    // 验证邀请码格式
+    if (!code) {
+      toast.error('请输入邀请码', { duration: 3000 })
+      return
+    }
+
+    if (!/^[A-Z0-9]{8}$/.test(code)) {
+      toast.error('邀请码格式不正确，必须是8位大写字母和数字组合', { duration: 3000 })
+      return
+    }
+
+    try {
+      setIsUsingCode(true)
+      const result = await invitationCodeApi.useInvitationCode({ code })
+      
+      // 显示成功消息
+      if (result.message) {
+        toast.success(result.message, { duration: 4000 })
+      } else {
+        toast.success('邀请码使用成功！', { duration: 3000 })
+      }
+      
+      // 清空输入框
+      setInvitationCode('')
+      
+      // 刷新用户信息以更新余额
+      await refreshUser()
+    } catch (error) {
+      if (error instanceof ApiError) {
+        // API错误已经在api.ts中通过toast显示了
+        // 这里不需要重复显示
+      } else if (error instanceof Error) {
+        toast.error(error.message, { duration: 3000 })
+      } else {
+        toast.error('邀请码使用失败，请稍后重试', { duration: 3000 })
+      }
+    } finally {
+      setIsUsingCode(false)
+    }
+  }
+
   return (
     <div className="space-y-10">
       {/* 标题 */}
@@ -148,6 +199,51 @@ export function BillingPanel() {
             />
           ))
         )}
+      </div>
+
+      {/* 邀请码区域 */}
+      <div>
+        <h3 className="text-xl font-bold text-white mb-4">使用邀请码</h3>
+        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-600/20 border border-orange-400/30 flex items-center justify-center">
+                <Gift className="w-6 h-6 text-orange-400" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-white font-medium mb-2">输入邀请码获取奖励</h4>
+              <p className="text-white/60 text-sm mb-4">
+                使用有效的邀请码可以获得额外的点数奖励，快来试试吧！
+              </p>
+              <div className="flex gap-3">
+                <Input
+                  type="text"
+                  placeholder="请输入8位邀请码"
+                  value={invitationCode}
+                  onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
+                  maxLength={8}
+                  className="flex-1 h-11 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10 focus:border-orange-500/50 uppercase"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isUsingCode) {
+                      handleUseInvitationCode()
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleUseInvitationCode}
+                  disabled={isUsingCode || !invitationCode.trim()}
+                  className="h-11 px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium disabled:opacity-50"
+                >
+                  {isUsingCode ? '验证中...' : '使用邀请码'}
+                </Button>
+              </div>
+              <p className="text-white/40 text-xs mt-2">
+                💡 提示：邀请码必须是8位大写字母和数字组合
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 交易记录 */}
