@@ -30,7 +30,8 @@ export function UsageChart() {
           
           const current = aggregatedData.get(dateStr) || 0
           // 假设每次检测消耗1 credit，实际应该根据后端返回的数据调整
-          aggregatedData.set(dateStr, current + 1)
+          // 使用parseFloat确保数值运算后保持精度，最后在渲染时统一格式化
+          aggregatedData.set(dateStr, parseFloat((current + 1).toFixed(2)))
         })
         
         // 生成最近7天的数据，即使某天没有使用也显示0
@@ -44,7 +45,7 @@ export function UsageChart() {
           
           last7Days.push({
             date: dateStr,
-            credits: aggregatedData.get(dateStr) || 0
+            credits: parseFloat((aggregatedData.get(dateStr) || 0).toFixed(2))
           })
         }
         
@@ -105,7 +106,7 @@ export function UsageChart() {
             <YAxis 
               stroke="rgba(255,255,255,0.4)"
               tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }}
-              allowDecimals={false}
+              tickFormatter={(value: number) => Number(value).toFixed(2)}
             />
             <Tooltip
               contentStyle={{
@@ -115,7 +116,7 @@ export function UsageChart() {
                 color: '#fff'
               }}
               labelStyle={{ color: 'rgba(255,255,255,0.8)' }}
-              formatter={(value: number) => [`${value} credits`, '使用量']}
+              formatter={(value: number) => [`${Number(value).toFixed(2)} credits`, '使用量']}
             />
             <Line
               type="monotone"
@@ -134,19 +135,19 @@ export function UsageChart() {
         <div>
           <div className="text-white/60 text-xs mb-1">7天总计</div>
           <div className="text-white font-semibold">
-            {data.reduce((sum, d) => sum + d.credits, 0)} credits
+            {data.reduce((sum, d) => sum + d.credits, 0).toFixed(2)} credits
           </div>
         </div>
         <div>
           <div className="text-white/60 text-xs mb-1">日均使用</div>
           <div className="text-white font-semibold">
-            {(data.reduce((sum, d) => sum + d.credits, 0) / 7)} credits
+            {(data.reduce((sum, d) => sum + d.credits, 0) / 7).toFixed(2)} credits
           </div>
         </div>
         <div>
           <div className="text-white/60 text-xs mb-1">单日峰值</div>
           <div className="text-white font-semibold">
-            {Math.max(...data.map(d => d.credits))} credits
+            {Math.max(...data.map(d => d.credits)).toFixed(2)} credits
           </div>
         </div>
       </div>

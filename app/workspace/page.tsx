@@ -81,7 +81,7 @@ function WorkspaceContent() {
                         <span className="text-white/70 text-xs">账户余额</span>
                         <Zap className="w-3 h-3 text-orange-400" />
                       </div>
-                      <div className="text-2xl font-bold text-white mb-0.5">{user.remainingQuota}</div>
+                      <div className="text-2xl font-bold text-white mb-0.5">{Number(user.remainingQuota).toFixed(2)}</div>
                       <div className="text-orange-400 text-xs">{user.role}</div>
                     </div>
                   </div>
@@ -144,7 +144,7 @@ function WorkspaceContent() {
                         <div>
                           <h3 className="text-lg font-semibold text-white mb-1">配额使用</h3>
                           <p className="text-white/50 text-sm">
-                            已使用 {user.usedQuota} / {user.totalQuota} credits
+                            已使用 {Number(user.usedQuota).toFixed(2)} / {Number(user.totalQuota).toFixed(2)} credits
                           </p>
                         </div>
                         <div className="text-right">

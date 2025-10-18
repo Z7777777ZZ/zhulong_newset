@@ -18,15 +18,15 @@ export function OverviewPanel() {
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
           <div className="text-white/60 text-sm mb-2">剩余credits</div>
           <div className="flex items-baseline gap-2">
-            <div className="text-4xl font-bold text-white">{user.remainingQuota}</div>
-            <div className="text-white/40 text-lg">/ {user.totalQuota}</div>
+            <div className="text-4xl font-bold text-white">{Number(user.remainingQuota).toFixed(2)}</div>
+            <div className="text-white/40 text-lg">/ {Number(user.totalQuota).toFixed(2)}</div>
           </div>
         </div>
 
         <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
           <div className="text-white/60 text-sm mb-2">累计检测</div>
           <div className="flex items-baseline gap-2">
-            <div className="text-4xl font-bold text-white">{user.usedQuota}</div>
+            <div className="text-4xl font-bold text-white">{Number(user.usedQuota).toFixed(2)}</div>
             <div className="text-white/40 text-lg">credits</div>
           </div>
         </div>

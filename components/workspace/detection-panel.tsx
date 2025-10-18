@@ -723,11 +723,11 @@ export function DetectionPanel() {
                       </div>
                       <div className="text-center">
                         <div className="text-white/60 text-xs mb-1">消耗配额</div>
-                        <div className="text-orange-400 font-bold text-sm">{rewriteResult.quotaUsed}</div>
+                        <div className="text-orange-400 font-bold text-sm">{Number(rewriteResult.quotaUsed).toFixed(2)}</div>
                       </div>
                       <div className="text-center">
                         <div className="text-white/60 text-xs mb-1">剩余配额</div>
-                        <div className="text-green-400 font-bold text-sm">{rewriteResult.remainingQuota}</div>
+                        <div className="text-green-400 font-bold text-sm">{Number(rewriteResult.remainingQuota).toFixed(2)}</div>
                       </div>
                     </div>
                   </div>

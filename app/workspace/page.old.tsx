@@ -386,16 +386,16 @@ export default function WorkspacePage() {
                       <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
                         <div className="text-white/60 text-sm mb-2">今日已用</div>
                         <div className="flex items-baseline gap-2">
-                          <div className="text-4xl font-bold text-white">{userData.usageToday}</div>
-                          <div className="text-white/40 text-lg">/ {userData.usageLimit}</div>
+                          <div className="text-4xl font-bold text-white">{Number(userData.usageToday).toFixed(2)}</div>
+                          <div className="text-white/40 text-lg">/ {Number(userData.usageLimit).toFixed(2)}</div>
                         </div>
                       </div>
                       
                       <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
                         <div className="text-white/60 text-sm mb-2">剩余credits</div>
                         <div className="flex items-baseline gap-2">
-                          <div className="text-4xl font-bold text-white">{userData.remainingQuota}</div>
-                          <div className="text-white/40 text-lg">/ {userData.totalQuota}</div>
+                          <div className="text-4xl font-bold text-white">{Number(userData.remainingQuota).toFixed(2)}</div>
+                          <div className="text-white/40 text-lg">/ {Number(userData.totalQuota).toFixed(2)}</div>
                         </div>
                       </div>
 
@@ -463,7 +463,7 @@ export default function WorkspacePage() {
                       <div className="flex items-center justify-between mb-6">
                         <div>
                           <h3 className="text-lg font-semibold text-white mb-1">配额使用</h3>
-                          <p className="text-white/50 text-sm">已使用 {userData.usedQuota} / {userData.totalQuota} credits</p>
+                          <p className="text-white/50 text-sm">已使用 {Number(userData.usedQuota).toFixed(2)} / {Number(userData.totalQuota).toFixed(2)} credits</p>
                         </div>
                         <div className="text-right">
                           <div className="text-3xl font-bold text-white">{Math.round((userData.usedQuota / userData.totalQuota) * 100)}%</div>
