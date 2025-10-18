@@ -13,14 +13,11 @@ export function Navigation() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm text-white/70 hover:text-white transition-colors">
+            <a href="#demo" className="text-sm text-white/70 hover:text-white transition-colors">
               功能
             </a>
-            <a href="#pricing" className="text-sm text-white/70 hover:text-white transition-colors">
+            <a href="#pricing-section" className="text-sm text-white/70 hover:text-white transition-colors">
               价格
-            </a>
-            <a href="#docs" className="text-sm text-white/70 hover:text-white transition-colors">
-              文档
             </a>
             <Link href="/workspace" className="text-sm text-white/70 hover:text-white transition-colors">
               使用

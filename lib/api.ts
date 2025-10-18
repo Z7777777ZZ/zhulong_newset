@@ -2,7 +2,7 @@
 import { toast } from "sonner"
 import { clearStoredToken, getStoredToken } from "./token-storage"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api'
 
 export interface ApiEnvelope<T> {
   success: boolean
@@ -21,13 +21,28 @@ export class ApiError<T = unknown> extends Error {
   }
 }
 
+// 不需要认证的接口列表
+const PUBLIC_ENDPOINTS = ['/auth/login', '/auth/email-login', '/auth/register', '/auth/verify-email']
+
 // 请求拦截器：添加认证头
-const getAuthHeaders = (): Record<string, string> => {
+const getAuthHeaders = (endpoint: string): Record<string, string> => {
   const token = getStoredToken()
   const headers: Record<string, string> = {}
 
+  const isPublicEndpoint = PUBLIC_ENDPOINTS.some(path => endpoint.includes(path))
+
+  console.log('🔐 Token检查:', {
+    endpoint,
+    hasToken: !!token,
+    tokenLength: token?.length || 0,
+    tokenPreview: token ? `${token.substring(0, 20)}...` : 'NO TOKEN',
+    isPublic: isPublicEndpoint,
+  })
+
   if (token) {
     headers.Authorization = `Bearer ${token}`
+  } else if (!isPublicEndpoint) {
+    console.warn('⚠️ 受保护的API请求缺少token，可能需要重新登录')
   }
 
   return headers
@@ -47,18 +62,29 @@ const parseJson = async <T>(response: Response): Promise<T | null> => {
 class ApiService {
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    silent: boolean = false // 是否静默失败，不显示错误提示
   ): Promise<ApiEnvelope<T>> {
     const url = `${API_BASE_URL}${endpoint}`
 
     const body = options.body
+    const authHeaders = getAuthHeaders(endpoint)
     const defaultHeaders: Record<string, string> = {
-      ...getAuthHeaders(),
+      ...authHeaders,
     }
 
     if (body && !(body instanceof FormData)) {
       defaultHeaders['Content-Type'] = 'application/json'
     }
+
+    // 调试：打印请求信息
+    console.log('API Request:', {
+      url,
+      method: options.method || 'GET',
+      hasToken: !!authHeaders.Authorization,
+      authHeader: authHeaders.Authorization ? `${authHeaders.Authorization.substring(0, 30)}...` : 'NONE',
+      allHeaders: defaultHeaders,
+    })
 
     const config: RequestInit = {
       ...options,
@@ -66,6 +92,8 @@ class ApiService {
         ...defaultHeaders,
         ...options.headers,
       },
+      // 确保credentials被发送，这对代理转发很重要
+      credentials: 'include',
     }
 
     try {
@@ -75,11 +103,22 @@ class ApiService {
         const message = payload?.message || `HTTP ${response.status}: ${response.statusText}`
 
         if (response.status === 401) {
+          console.error('401 Unauthorized - Token已过期，请重新登录')
           clearStoredToken()
-        }
-
-        if (response.status !== 401) {
-          toast.error(message)
+          toast.error('登录已过期，请重新登录', {
+            duration: 3000,
+          })
+          // 延迟跳转到登录页，给用户足够时间查看错误信息
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login'
+            }
+          }, 3000)
+        } else if (!silent) {
+          // 只在非静默模式下显示错误提示
+          toast.error(message, {
+            duration: 3000,
+          })
         }
 
         throw new ApiError(message, response.status, payload)
@@ -92,7 +131,12 @@ class ApiService {
 
       if (!payload.success) {
         const message = payload.message || '接口请求失败'
-        toast.error(message)
+        if (!silent) {
+          // 只在非静默模式下显示错误提示
+          toast.error(message, {
+            duration: 3000,
+          })
+        }
         throw new ApiError(message, response.status, payload)
       }
 
@@ -103,17 +147,17 @@ class ApiService {
       // 显示用户友好的错误提示
       if (error instanceof ApiError) {
         if (error.status === 401) {
-          toast.error('登录状态已失效，请重新登录')
+          toast.error('登录状态已失效，请重新登录', { duration: 3000 })
         }
         // 已经在上面显示过错误了，不需要重复显示
       } else if (error instanceof TypeError && error.message.includes('fetch')) {
         // 网络错误，可能是CORS或网络不可达
         const errorMessage = `无法连接到服务器 (${API_BASE_URL})\n\n可能原因:\n1. 后端服务未启动\n2. CORS配置问题\n3. 网络连接问题`
-        toast.error(errorMessage, { duration: 5000 })
+        toast.error(errorMessage, { duration: 3000 })
       } else if (error instanceof Error) {
-        toast.error(error.message)
+        toast.error(error.message, { duration: 3000 })
       } else {
-        toast.error('网络请求失败，请检查网络连接')
+        toast.error('网络请求失败，请检查网络连接', { duration: 3000 })
       }
 
       throw error
@@ -121,7 +165,7 @@ class ApiService {
   }
 
   // GET请求
-  async get<T>(endpoint: string, params?: Record<string, any | undefined>): Promise<ApiEnvelope<T>> {
+  async get<T>(endpoint: string, params?: Record<string, any | undefined>, silent?: boolean): Promise<ApiEnvelope<T>> {
     const searchParams = params
       ? new URLSearchParams(
           Object.entries(params).reduce<Record<string, string>>((acc, [key, value]) => {
@@ -134,11 +178,12 @@ class ApiService {
       : ''
     const url = searchParams ? `${endpoint}?${searchParams}` : endpoint
 
-    return this.request<T>(url, { method: 'GET' })
+    return this.request<T>(url, { method: 'GET' }, silent)
   }
 
   // POST请求
   async post<T>(endpoint: string, data?: any): Promise<ApiEnvelope<T>> {
+    console.log('📤 POST Request:', endpoint, 'Data:', data)
     return this.request<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
@@ -162,6 +207,30 @@ class ApiService {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: data,
+    })
+  }
+
+  // POST请求 - application/x-www-form-urlencoded
+  async postUrlEncoded<T>(endpoint: string, data?: Record<string, any>): Promise<ApiEnvelope<T>> {
+    console.log('📤 POST (URLEncoded) Request:', endpoint, 'Data:', data)
+
+    const formBody = data
+      ? new URLSearchParams(
+          Object.entries(data).reduce<Record<string, string>>((acc, [key, value]) => {
+            if (value !== undefined && value !== null) {
+              acc[key] = String(value)
+            }
+            return acc
+          }, {})
+        ).toString()
+      : ''
+
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formBody,
     })
   }
 }
@@ -468,15 +537,15 @@ export const rechargeApi = {
 
   // 创建充值订单
   createOrder: (data: { packageId: number; paymentMethod: string }) =>
-    apiService.post<string>('/recharge/order', data),
+    apiService.postUrlEncoded<string>('/recharge/order', data),
 
   // 创建支付宝扫码支付
   createAlipayQrCode: (orderId: string) =>
-    apiService.post<AlipayQrCodeResponse>('/recharge/alipay/precreate', { orderId }),
+    apiService.postUrlEncoded<AlipayQrCodeResponse>('/recharge/alipay/precreate', { orderId }),
 
-  // 查询支付宝订单状态
+  // 查询支付宝订单状态（静默模式，失败不显示错误提示）
   queryAlipayStatus: (orderId: string) =>
-    apiService.get<AlipayOrderStatusResponse>(`/recharge/alipay/query/${orderId}`),
+    apiService.get<AlipayOrderStatusResponse>(`/recharge/alipay/query/${orderId}`, undefined, true),
 
   // 取消订单
   cancelOrder: (orderId: string) =>

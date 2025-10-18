@@ -25,10 +25,10 @@ function WorkspaceContent() {
         <div className="px-6 h-14 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+            {/* <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold text-white">烛龙AI</span>
+            </div> */}
+            <span className="text-lg font-bold text-white">DragonAI</span>
           </div>
 
           {/* Tab切换 */}
@@ -63,23 +63,16 @@ function WorkspaceContent() {
 
         {/* 面板界面 */}
         {activeTab === 'dashboard' && (
-          <div className="flex justify-center min-h-[calc(100vh-3.5rem)] px-6 py-6">
+          <div className="flex justify-center min-h-[calc(100vh-3.5rem)] px-6 py-12">
             <div className="flex gap-6 w-full max-w-7xl">
               {/* 左侧边栏 */}
               <aside className="w-56 flex-shrink-0">
-                <div className="sticky top-20 space-y-4">
+                <div className="sticky top-28 space-y-4">
                   {/* 用户信息卡片 */}
                   <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-                    <div className="flex items-center gap-3 mb-3">
-                      <img
-                        src={user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'}
-                        alt="Avatar"
-                        className="w-10 h-10 rounded-full"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white text-sm font-medium truncate">{user.username}</div>
-                        <div className="text-white/50 text-xs truncate">{user.email}</div>
-                      </div>
+                    <div className="mb-3">
+                      <div className="text-white text-sm font-medium truncate">{user.username}</div>
+                      <div className="text-white/50 text-xs truncate">{user.email}</div>
                     </div>
 
                     {/* 余额卡片 */}
@@ -141,7 +134,7 @@ function WorkspaceContent() {
               </aside>
 
               {/* 右侧内容区 */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto pt-4">
                 {dashboardView === 'overview' && <OverviewPanel />}
                 {dashboardView === 'history' && <HistoryPanel />}
                 {dashboardView === 'usage' && (

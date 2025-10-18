@@ -16,7 +16,7 @@ export function useDetection() {
     splitStrategy?: 'paragraph' | 'semantic' | 'default' | 'sentence' | 'fixed'
   }) => {
     if (!text.trim()) {
-      toast.error('请输入待检测的文本')
+      toast.error('请输入待检测的文本', { duration: 3000 })
       return null
     }
 
@@ -32,7 +32,7 @@ export function useDetection() {
       })
       
       setResult(response.data)
-      toast.success('检测完成')
+      toast.success('检测完成', { duration: 3000 })
       return response.data
     } catch (error) {
       console.error('检测失败:', error)
@@ -60,7 +60,7 @@ export function useDetection() {
       })
       
       setResult(response.data)
-      toast.success('检测完成')
+      toast.success('检测完成', { duration: 3000 })
       return response.data
     } catch (error) {
       console.error('检测失败:', error)

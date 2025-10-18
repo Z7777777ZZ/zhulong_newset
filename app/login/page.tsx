@@ -7,6 +7,7 @@ import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
 
 import { useAuth } from "@/components/providers/auth-provider"
 import { Button } from "@/components/ui/button"
@@ -62,6 +63,10 @@ export default function LoginPage() {
         setSubmitError("登录失败，请稍后重试")
       }
     }
+  }
+
+  const handleGoogleLogin = () => {
+    toast.info("Google 登录功能开发中，敬请期待！即将上线 🚀", { duration: 3000 })
   }
 
   return (
@@ -183,6 +188,7 @@ export default function LoginPage() {
             <Button
               type="button"
               variant="outline"
+              onClick={handleGoogleLogin}
               className="w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-xl transition-all"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

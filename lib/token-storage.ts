@@ -27,10 +27,18 @@ export const getStoredToken = (): string | null => {
 
   const sessionToken = getClientStorage('sessionStorage')?.getItem(TOKEN_KEY)
   if (sessionToken) {
+    console.log('📦 从sessionStorage读取token')
     return sessionToken
   }
 
-  return getClientStorage('localStorage')?.getItem(TOKEN_KEY) ?? null
+  const localToken = getClientStorage('localStorage')?.getItem(TOKEN_KEY)
+  if (localToken) {
+    console.log('📦 从localStorage读取token')
+    return localToken
+  }
+
+  console.log('📦 未找到token')
+  return null
 }
 
 export const setStoredToken = (token: string, rememberMe: boolean) => {
@@ -44,8 +52,10 @@ export const setStoredToken = (token: string, rememberMe: boolean) => {
 
   if (rememberMe) {
     local?.setItem(TOKEN_KEY, token)
+    console.log('✅ Token已保存到localStorage (记住我)')
   } else {
     session?.setItem(TOKEN_KEY, token)
+    console.log('✅ Token已保存到sessionStorage (不记住)')
   }
 }
 

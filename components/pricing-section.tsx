@@ -29,84 +29,100 @@ export function PricingSection() {
 
   const plans = [
     {
-      name: "免费版",
+      name: "免费",
       price: "¥0",
       period: "永久免费",
-      description: "适合个人用户体验产品功能",
-      features: ["每日 5 次 AI 检测", "每日 3 次智能降重", "基础检测准确率", "标准响应速度", "社区支持"],
+      description: "体验基础功能",
+      features: [
+        "10 credits",
+        "上传文件：无",
+        "智能降重：无",
+        "响应速度：标准",
+        "批量处理：不支持",
+      ],
       cta: "开始使用",
       popular: false,
     },
     {
-      name: "专业版",
-      price: "¥99",
+      name: "Plus",
+      price: "¥9.9",
       period: "每月",
-      description: "适合内容创作者和自媒体",
+      yearlyPrice: "¥99.9",
+      eduDiscount: "教育认证可8折",
+      description: "适合个人用户",
       features: [
-        "无限次 AI 检测",
-        "无限次智能降重",
-        "高级检测准确率 99.2%",
-        "优先响应速度",
-        "批量处理功能",
-        "API 接口访问",
-        "优先客服支持",
-        "数据导出功能",
+        "30 credits/月",
+        "上传文件：有限（2次/月）",
+        "智能降重：有限（1次/月）",
+        "响应速度：标准",
+        "批量处理：不支持",
+      ],
+      cta: "立即订阅",
+      popular: false,
+    },
+    {
+      name: "Pro",
+      price: "¥19.9",
+      period: "每月",
+      yearlyPrice: "¥199",
+      eduDiscount: "教育认证可8折",
+      description: "适合内容创作者",
+      features: [
+        "65 credits/月",
+        "上传文件：不限",
+        "智能降重：不限",
+        "响应速度：优先",
+        "批量处理：不支持",
       ],
       cta: "立即订阅",
       popular: true,
     },
     {
-      name: "企业版",
-      price: "定制",
-      period: "联系我们",
-      description: "适合团队和企业级用户",
+      name: "Max",
+      price: "¥39.9",
+      period: "每月",
+      yearlyPrice: "¥399",
+      eduDiscount: "教育认证可8折",
+      description: "适合专业用户和团队",
       features: [
-        "专业版所有功能",
-        "团队协作管理",
-        "自定义检测模型",
-        "私有化部署选项",
-        "专属客户经理",
-        "SLA 服务保障",
-        "定制化开发",
-        "培训与咨询服务",
+        "150 credits/月",
+        "上传文件：不限",
+        "智能降重：不限",
+        "响应速度：极速",
+        "批量处理：支持",
       ],
-      cta: "联系销售",
+      cta: "立即订阅",
       popular: false,
     },
   ]
 
-  const comparisonFeatures = [
-    { name: "AI 检测次数", free: "5次/天", pro: "无限", enterprise: "无限" },
-    { name: "智能降重次数", free: "3次/天", pro: "无限", enterprise: "无限" },
-    { name: "检测准确率", free: "95%", pro: "99.2%", enterprise: "99.5%" },
-    { name: "响应速度", free: "标准", pro: "优先", enterprise: "极速" },
-    { name: "批量处理", free: false, pro: true, enterprise: true },
-    { name: "API 接口", free: false, pro: true, enterprise: true },
-    { name: "数据导出", free: false, pro: true, enterprise: true },
-    { name: "团队协作", free: false, pro: false, enterprise: true },
-    { name: "自定义模型", free: false, pro: false, enterprise: true },
-    { name: "私有化部署", free: false, pro: false, enterprise: true },
-    { name: "专属客户经理", free: false, pro: false, enterprise: true },
-    { name: "SLA 保障", free: false, pro: false, enterprise: true },
+  const benchmarkData = [
+    { name: "代码", gptzero: "58.5%", originality: "75.2%", sapling: "72.1%", hive: "68.9%", zhulong: "94.8%" },
+    { name: "公文", gptzero: "56.7%", originality: "78.9%", sapling: "75.5%", hive: "80.1%", zhulong: "91.7%" },
+    { name: "小说", gptzero: "59.2%", originality: "81.3%", sapling: "79.8%", hive: "77.4%", zhulong: "95.6%" },
+    { name: "论文（中文）", gptzero: "61.3%", originality: "85.1%", sapling: "82.4%", hive: "80.5%", zhulong: "98.4%" },
+    { name: "论文（英文）", gptzero: "62.2%", originality: "86.5%", sapling: "83.1%", hive: "81.2%", zhulong: "97.2%" },
+    { name: "外语作文（英语）", gptzero: "58.7%", originality: "82.7%", sapling: "80.2%", hive: "78.6%", zhulong: "98.3%" },
+    { name: "外语作文（法语）", gptzero: "54.9%", originality: "70.4%", sapling: "68.3%", hive: "65.7%", zhulong: "98.9%" },
   ]
 
   const faqs = [
     {
       question: "如何选择适合我的方案？",
       answer:
-        "如果您是个人用户，想要体验产品功能，免费版就足够了。如果您是内容创作者或自媒体，需要频繁使用，建议选择专业版。企业用户可以联系我们定制专属方案。",
+        "如果您是个人用户，想要体验产品功能，Plus版本就足够了。如果您是内容创作者或自媒体，需要频繁使用，建议选择Pro版本。企业用户可以选择Max版本。",
     },
     {
       question: "可以随时取消订阅吗？",
-      answer: "是的，您可以随时取消订阅。取消后，您的账户将在当前计费周期结束后自动降级为免费版，不会产生额外费用。",
+      answer: "目前系统正在逐步完善，可以联系我们进行订阅降级或升级。",
     },
     {
       question: "支持哪些支付方式？",
-      answer: "我们支持支付宝、微信支付、银行卡等多种支付方式。企业用户还可以选择对公转账。",
+      answer: "目前我们支持支付宝。",
     },
     {
       question: "检测准确率是如何计算的？",
-      answer: "我们的检测准确率是基于大规模测试数据集计算得出的。专业版使用更先进的检测模型，准确率可达 99.2%。",
+      answer: "我们的检测准确率是基于大规模测试数据集计算得出的。专业版使用更先进的检测模型。",
     },
   ]
 
@@ -115,7 +131,7 @@ export function PricingSection() {
       {/* Section header */}
       <div className="max-w-7xl mx-auto mb-20">
         <div
-          className={`transition-all duration-1000 ${
+          className={`text-center transition-all duration-1000 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
@@ -125,13 +141,13 @@ export function PricingSection() {
             <br />
             <span className="gradient-text">定价方案</span>
           </h2>
-          <p className="text-white/60 text-lg md:text-xl max-w-2xl">灵活的定价选项，满足个人到企业的各种需求</p>
+          <p className="text-white/60 text-lg md:text-xl max-w-2xl mx-auto">灵活的定价选项，满足个人到企业的各种需求</p>
         </div>
       </div>
 
       {/* Pricing cards */}
-      <div className="max-w-7xl mx-auto mb-32">
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+      <div className="max-w-[1400px] mx-auto mb-32">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {plans.map((plan, index) => (
             <div
               key={plan.name}
@@ -149,25 +165,35 @@ export function PricingSection() {
               )}
 
               <div
-                className={`relative h-full glass-card rounded-3xl p-8 transition-all duration-300 hover:scale-105 ${
+                className={`relative h-full min-h-[600px] glass-card rounded-2xl p-7 transition-all duration-300 hover:scale-[1.02] flex flex-col ${
                   plan.popular ? "border-orange-500/50 shadow-2xl shadow-orange-500/20" : "border-white/10"
                 }`}
               >
                 <div className="mb-6">
                   <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-white/50 text-sm">{plan.description}</p>
+                  <p className="text-white/50 text-base">{plan.description}</p>
                 </div>
 
-                <div className="mb-8">
-                  <div className="flex items-baseline gap-2 mb-1">
+                <div className="mb-8 min-h-[140px]">
+                  <div className="flex items-baseline gap-1 mb-2">
                     <span className="text-5xl font-bold text-white">{plan.price}</span>
-                    {plan.price !== "定制" && <span className="text-white/50 text-lg">/ 月</span>}
+                    {plan.price !== "¥0" && <span className="text-white/50 text-lg">/ 月</span>}
                   </div>
-                  <p className="text-white/40 text-sm">{plan.period}</p>
+                  <p className="text-white/40 text-sm mb-2">{plan.period}</p>
+                  {plan.yearlyPrice ? (
+                    <p className="text-orange-400/80 text-sm font-medium">年付：{plan.yearlyPrice}</p>
+                  ) : (
+                    <div className="h-5"></div>
+                  )}
+                  {plan.eduDiscount ? (
+                    <p className="text-blue-400/80 text-xs mt-1">{plan.eduDiscount}</p>
+                  ) : (
+                    <div className="h-4 mt-1"></div>
+                  )}
                 </div>
 
                 <Button
-                  className={`w-full h-12 rounded-full font-medium mb-8 transition-all duration-300 ${
+                  className={`w-full h-12 rounded-full font-medium text-base mb-8 transition-all duration-300 ${
                     plan.popular
                       ? "bg-white hover:bg-white/90 text-black"
                       : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
@@ -176,19 +202,38 @@ export function PricingSection() {
                   {plan.cta}
                 </Button>
 
-                <div className="space-y-4">
+                <div className="space-y-4 flex-1">
                   {plan.features.map((feature) => (
                     <div key={feature} className="flex items-start gap-3">
-                      <div className="mt-0.5 flex-shrink-0">
+                      <div className="mt-1 flex-shrink-0">
                         <Check className="w-5 h-5 text-orange-400" />
                       </div>
-                      <span className="text-white/80 text-sm leading-relaxed">{feature}</span>
+                      <span className="text-white/80 text-base leading-relaxed">{feature}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+        
+        {/* 邀请码和分销提示 */}
+        <div className="mt-12 max-w-4xl mx-auto">
+          <div
+            className={`transition-all duration-1000 delay-500 ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+          >
+            <div className="glass-card rounded-2xl p-6 text-center">
+              <p className="text-white/70 text-sm mb-3">
+                💡 使用官方邀请码可获得 <span className="text-orange-400 font-semibold">10 credits</span> 额度
+              </p>
+              <div className="space-y-2 text-white/60 text-xs">
+                <p>• 二级分销制度，每邀请一个好友可获得 2-5 credits，上不封顶</p>
+                <p>• 官方邀请码内置 10 credits 额度</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -198,64 +243,51 @@ export function PricingSection() {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
           }`}
         >
-          <h3 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">功能对比</h3>
+          <h3 className="text-3xl md:text-4xl font-bold text-white mb-12 text-center">检测精度对比</h3>
           <div className="glass-card rounded-3xl p-8 overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-4 px-4 text-white/60 font-medium">功能</th>
-                  <th className="text-center py-4 px-4 text-white font-medium">免费版</th>
+                  <th className="text-left py-4 px-4 text-white/60 font-medium">测试类型</th>
+                  <th className="text-center py-4 px-4 text-white font-medium text-sm">GPTZero</th>
+                  <th className="text-center py-4 px-4 text-white font-medium text-sm">Originality.ai</th>
+                  <th className="text-center py-4 px-4 text-white font-medium text-sm">Sapling AI Detector</th>
+                  <th className="text-center py-4 px-4 text-white font-medium text-sm">Hive Moderation</th>
                   <th className="text-center py-4 px-4 text-white font-medium">
                     <div className="inline-flex items-center gap-2">
-                      专业版
-                      <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">推荐</span>
+                      烛龙智元
+                      <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">最佳</span>
                     </div>
                   </th>
-                  <th className="text-center py-4 px-4 text-white font-medium">企业版</th>
                 </tr>
               </thead>
               <tbody>
-                {comparisonFeatures.map((feature, index) => (
-                  <tr key={feature.name} className="border-b border-white/5">
-                    <td className="py-4 px-4 text-white/80">{feature.name}</td>
+                {benchmarkData.map((item, index) => (
+                  <tr key={item.name} className="border-b border-white/5">
+                    <td className="py-4 px-4 text-white/80 font-medium">{item.name}</td>
                     <td className="py-4 px-4 text-center">
-                      {typeof feature.free === "boolean" ? (
-                        feature.free ? (
-                          <Check className="w-5 h-5 text-orange-400 mx-auto" />
-                        ) : (
-                          <X className="w-5 h-5 text-white/20 mx-auto" />
-                        )
-                      ) : (
-                        <span className="text-white/60">{feature.free}</span>
-                      )}
+                      <span className="text-white/60">{item.gptzero}</span>
                     </td>
                     <td className="py-4 px-4 text-center">
-                      {typeof feature.pro === "boolean" ? (
-                        feature.pro ? (
-                          <Check className="w-5 h-5 text-orange-400 mx-auto" />
-                        ) : (
-                          <X className="w-5 h-5 text-white/20 mx-auto" />
-                        )
-                      ) : (
-                        <span className="text-white/80 font-medium">{feature.pro}</span>
-                      )}
+                      <span className="text-white/60">{item.originality}</span>
                     </td>
                     <td className="py-4 px-4 text-center">
-                      {typeof feature.enterprise === "boolean" ? (
-                        feature.enterprise ? (
-                          <Check className="w-5 h-5 text-orange-400 mx-auto" />
-                        ) : (
-                          <X className="w-5 h-5 text-white/20 mx-auto" />
-                        )
-                      ) : (
-                        <span className="text-white/80 font-medium">{feature.enterprise}</span>
-                      )}
+                      <span className="text-white/60">{item.sapling}</span>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className="text-white/60">{item.hive}</span>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span className="text-orange-400 font-semibold text-lg">{item.zhulong}</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="text-white/40 text-sm text-center mt-4">
+            * 数据基于大规模测试数据集，准确率为AI生成内容的识别准确度
+          </p>
         </div>
       </div>
 

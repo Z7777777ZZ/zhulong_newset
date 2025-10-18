@@ -84,7 +84,7 @@ export default function RegisterPage() {
       setSendingCode(true)
       setSubmitError(null)
       await authApi.sendEmailVerification({ email })
-      toast.success("验证码已发送到邮箱，请注意查收")
+      toast.success("验证码已发送到邮箱，请注意查收", { duration: 3000 })
       setCountdown(60)
     } catch (error) {
       if (error instanceof ApiError) {
@@ -126,6 +126,10 @@ export default function RegisterPage() {
     }
   }
 
+  const handleGoogleRegister = () => {
+    toast.info("Google 注册功能开发中，敬请期待！即将上线 🚀", { duration: 3000 })
+  }
+
   return (
     <div className="min-h-screen gradient-background flex items-center justify-center px-6 py-12">
       <Link href="/" className="fixed top-8 left-8 text-2xl font-bold text-white hover:opacity-80 transition-opacity">
@@ -158,7 +162,7 @@ export default function RegisterPage() {
                         />
                       </FormControl>
                     </div>
-                    <FormMessage />
+                    <FormMessage className="text-white" />
                   </FormItem>
                 )}
               />
@@ -191,7 +195,7 @@ export default function RegisterPage() {
                         {countdown > 0 ? `${countdown}s` : "获取验证码"}
                       </Button>
                     </div>
-                    <FormMessage className="text-orange-400" />
+                    <FormMessage className="text-white" />
                   </FormItem>
                 )}
               />
@@ -210,7 +214,7 @@ export default function RegisterPage() {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-white" />
                   </FormItem>
                 )}
               />
@@ -239,7 +243,7 @@ export default function RegisterPage() {
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                    <FormMessage />
+                    <FormMessage className="text-white" />
                   </FormItem>
                 )}
               />
@@ -268,7 +272,7 @@ export default function RegisterPage() {
                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                    <FormMessage />
+                    <FormMessage className="text-white" />
                   </FormItem>
                 )}
               />
@@ -324,6 +328,7 @@ export default function RegisterPage() {
             <Button
               type="button"
               variant="outline"
+              onClick={handleGoogleRegister}
               className="w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-xl transition-all"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">

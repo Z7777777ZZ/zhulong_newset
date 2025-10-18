@@ -28,7 +28,7 @@ function WorkspaceContent() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">烛龙AI</span>
+            <span className="text-lg font-bold text-white">DragonAI</span>
           </div>
 
           {/* Tab切换 */}

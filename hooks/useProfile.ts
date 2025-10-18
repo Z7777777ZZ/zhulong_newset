@@ -22,7 +22,7 @@ export function useProfile() {
     setUpdating(true)
     try {
       await userApi.updateProfile(data)
-      toast.success('个人资料更新成功')
+      toast.success('个人资料更新成功', { duration: 3000 })
       // 刷新用户信息
       await refreshUser()
       setIsEditing(false)
@@ -42,7 +42,7 @@ export function useProfile() {
     setUpdating(true)
     try {
       await userApi.updatePassword(data)
-      toast.success('密码修改成功')
+      toast.success('密码修改成功', { duration: 3000 })
       return true
     } catch (error) {
       console.error('密码修改失败:', error)

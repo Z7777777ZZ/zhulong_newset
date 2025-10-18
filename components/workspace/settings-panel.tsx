@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Camera } from 'lucide-react'
 import { useProfile } from '@/hooks/useProfile'
 
 export function SettingsPanel() {
@@ -68,25 +67,6 @@ export function SettingsPanel() {
               </Button>
             </div>
           )}
-        </div>
-
-        <div className="flex items-center gap-6 mb-6">
-          <div className="relative">
-            <img
-              src={user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'}
-              alt="Avatar"
-              className="w-20 h-20 rounded-full border-2 border-orange-400"
-            />
-            {isEditing && (
-              <button className="absolute bottom-0 right-0 w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center">
-                <Camera className="w-4 h-4 text-white" />
-              </button>
-            )}
-          </div>
-          <div>
-            <h4 className="text-lg font-semibold text-white">{user.username}</h4>
-            <p className="text-white/60">{user.email}</p>
-          </div>
         </div>
 
         <div className="space-y-4">

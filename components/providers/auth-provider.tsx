@@ -134,7 +134,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true)
     try {
       const response = await authApi.register(input)
-      toast.success(response.message || '注册成功，请登录')
+      toast.success(response.message || '注册成功，请登录', { duration: 3000 })
     } finally {
       setLoading(false)
     }

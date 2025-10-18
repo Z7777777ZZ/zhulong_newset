@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 
 export function HeroSection() {
@@ -65,19 +66,23 @@ export function HeroSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-start gap-4">
-            <Button
-              size="lg"
-              className="text-base px-8 h-12 bg-white hover:bg-white/90 text-black font-medium rounded-full transition-all duration-300 hover:scale-105"
-            >
-              开始使用
-            </Button>
-            <Button
-              size="lg"
-              variant="ghost"
-              className="text-base px-8 h-12 border border-white/30 hover:bg-white/10 hover:border-white/50 text-white font-medium rounded-full backdrop-blur-sm transition-all duration-300"
-            >
-              了解更多
-            </Button>
+            <Link href="/login">
+              <Button
+                size="lg"
+                className="text-base px-8 h-12 bg-white hover:bg-white/90 text-black font-medium rounded-full transition-all duration-300 hover:scale-105"
+              >
+                开始使用
+              </Button>
+            </Link>
+            <a href="#demo">
+              <Button
+                size="lg"
+                variant="ghost"
+                className="text-base px-8 h-12 border border-white/30 hover:bg-white/10 hover:border-white/50 text-white font-medium rounded-full backdrop-blur-sm transition-all duration-300"
+              >
+                了解更多
+              </Button>
+            </a>
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ export function useDashboard() {
       setStats(response.data)
     } catch (error) {
       console.error('获取统计数据失败:', error)
-      toast.error('获取统计数据失败')
+      toast.error('获取统计数据失败', { duration: 3000 })
     } finally {
       setLoading(false)
     }

@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Sparkles, FileSearch, FileEdit } from 'lucide-react'
+import { Sparkles, FileSearch, FileEdit, FileText, Image } from 'lucide-react'
 import { useDetection } from '@/hooks/useDetection'
 
 const exampleText = `人工智能技术正在以前所未有的速度发展，深刻改变着我们的生活方式。从智能语音助手到自动驾驶汽车，AI的应用已经渗透到各个领域。机器学习算法能够从海量数据中学习模式，并做出准确的预测。深度神经网络的突破使得计算机视觉和自然语言处理取得了重大进展。`
 
 export function DetectionPanel() {
   const [mode, setMode] = useState<'detect' | 'rewrite'>('detect')
+  const [detectionType, setDetectionType] = useState<'text' | 'image'>('text')
   const [inputText, setInputText] = useState('')
   const { isProcessing, result, detect, reset } = useDetection()
 
@@ -24,65 +25,98 @@ export function DetectionPanel() {
     reset()
   }
 
+  const handleDetectionTypeChange = (type: 'text' | 'image') => {
+    setDetectionType(type)
+    reset()
+    setInputText('')
+  }
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] px-6 py-12">
       <div className="max-w-7xl mx-auto">
+        {/* 顶部检测类型切换 */}
         <div className="flex items-center justify-center gap-4 mb-8">
           <button
-            onClick={() => handleModeChange('detect')}
+            onClick={() => handleDetectionTypeChange('text')}
             className={`px-8 py-3 rounded-full font-medium transition-all ${
-              mode === 'detect'
+              detectionType === 'text'
                 ? 'bg-white text-black shadow-lg scale-105'
                 : 'bg-white/10 text-white/70 hover:bg-white/20'
             }`}
           >
-            <FileSearch className="w-5 h-5 inline-block mr-2" />
-            AI检测
+            <FileText className="w-5 h-5 inline-block mr-2" />
+            文本检测
           </button>
           <button
-            onClick={() => handleModeChange('rewrite')}
+            onClick={() => handleDetectionTypeChange('image')}
             className={`px-8 py-3 rounded-full font-medium transition-all ${
-              mode === 'rewrite'
+              detectionType === 'image'
                 ? 'bg-white text-black shadow-lg scale-105'
                 : 'bg-white/10 text-white/70 hover:bg-white/20'
             }`}
           >
-            <FileEdit className="w-5 h-5 inline-block mr-2" />
-            AI降重
+            <Image className="w-5 h-5 inline-block mr-2" />
+            图片检测
           </button>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* 输入区 */}
           <div className="glass-card rounded-2xl p-6 border border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">输入文本</h3>
-              <button
-                onClick={() => setInputText(exampleText)}
-                className="text-orange-400 hover:text-orange-300 text-sm font-medium"
-              >
-                <Sparkles className="w-4 h-4 inline mr-1.5" />
-                试用样本
-              </button>
-            </div>
+            {detectionType === 'text' ? (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">输入文本</h3>
+                  <button
+                    onClick={() => setInputText(exampleText)}
+                    className="text-orange-400 hover:text-orange-300 text-sm font-medium"
+                  >
+                    <Sparkles className="w-4 h-4 inline mr-1.5" />
+                    试用样本
+                  </button>
+                </div>
 
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder={mode === 'detect' ? '粘贴或输入文本进行AI检测...' : '粘贴或输入文本进行AI降重...'}
-              className="w-full h-96 bg-black/30 border border-white/10 rounded-xl p-4 text-white leading-relaxed placeholder-white/30 focus:outline-none focus:border-orange-400/50 resize-none"
-            />
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder={mode === 'detect' ? '粘贴或输入文本进行AI检测...' : '粘贴或输入文本进行AI降重...'}
+                  className="w-full h-96 bg-black/30 border border-white/10 rounded-xl p-4 text-white leading-relaxed placeholder-white/30 focus:outline-none focus:border-orange-400/50 resize-none"
+                />
 
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-white/40 text-sm">{inputText.length} / 5000 字符</div>
-              <Button
-                onClick={handleDetect}
-                disabled={!inputText.trim() || isProcessing}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
-              >
-                {isProcessing ? '处理中...' : mode === 'detect' ? '开始检测' : '开始降重'}
-              </Button>
-            </div>
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-white/40 text-sm">{inputText.length} / 5000 字符</div>
+                  <Button
+                    onClick={handleDetect}
+                    disabled={!inputText.trim() || isProcessing}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                  >
+                    {isProcessing ? '处理中...' : mode === 'detect' ? '开始检测' : '开始降重'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">上传图片</h3>
+                </div>
+
+                <div className="h-96 flex flex-col items-center justify-center border-2 border-dashed border-white/20 rounded-xl bg-black/30">
+                  <Image className="w-16 h-16 text-white/40 mb-4" />
+                  <p className="text-white/60 text-sm mb-2">图片检测功能</p>
+                  <p className="text-white/40 text-xs">敬请期待...</p>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-white/40 text-sm">支持 JPG、PNG 格式</div>
+                  <Button
+                    disabled
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 opacity-50"
+                  >
+                    开发中
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 结果区 */}
@@ -145,6 +179,32 @@ export function DetectionPanel() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* 底部模式切换 */}
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            onClick={() => handleModeChange('detect')}
+            className={`px-6 py-2.5 rounded-full font-medium transition-all text-sm ${
+              mode === 'detect'
+                ? 'bg-orange-500 text-white'
+                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <FileSearch className="w-4 h-4 inline-block mr-2" />
+            AI检测
+          </button>
+          <button
+            onClick={() => handleModeChange('rewrite')}
+            className={`px-6 py-2.5 rounded-full font-medium transition-all text-sm ${
+              mode === 'rewrite'
+                ? 'bg-orange-500 text-white'
+                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <FileEdit className="w-4 h-4 inline-block mr-2" />
+            AI降重
+          </button>
         </div>
       </div>
     </div>

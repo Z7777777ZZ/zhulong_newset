@@ -35,7 +35,7 @@ export function useHistory() {
       setRecords(response.data)
     } catch (error) {
       console.error('获取历史记录失败:', error)
-      toast.error('获取历史记录失败')
+      toast.error('获取历史记录失败', { duration: 3000 })
     } finally {
       setLoading(false)
     }
@@ -44,12 +44,12 @@ export function useHistory() {
   const deleteRecord = async (id: number) => {
     try {
       await historyApi.deleteHistoryRecord(id)
-      toast.success('删除成功')
+      toast.success('删除成功', { duration: 3000 })
       // 重新获取列表
       await fetchHistory()
     } catch (error) {
       console.error('删除失败:', error)
-      toast.error('删除失败')
+      toast.error('删除失败', { duration: 3000 })
     }
   }
 
@@ -59,7 +59,7 @@ export function useHistory() {
       return response.data
     } catch (error) {
       console.error('获取详情失败:', error)
-      toast.error('获取详情失败')
+      toast.error('获取详情失败', { duration: 3000 })
       return null
     }
   }
