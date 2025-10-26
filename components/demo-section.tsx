@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Sparkles, ArrowRight } from "lucide-react"
+import Link from "next/link"
 
 const sampleDetectionText = [
   { text: "人工智能技术的发展", isAI: false },
@@ -236,10 +237,12 @@ export function DemoSection() {
         </div>
 
         <div className="text-center mt-16">
-          <Button className="h-14 px-10 text-lg bg-white hover:bg-white/90 text-black font-medium rounded-full shadow-xl">
-            立即开始使用
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
+          <Link href="/login">
+            <Button className="h-14 px-10 text-lg bg-white hover:bg-white/90 text-black font-medium rounded-full shadow-xl">
+              立即开始使用
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

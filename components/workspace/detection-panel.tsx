@@ -2,20 +2,25 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Sparkles, FileSearch, FileEdit, FileText, Image, Upload, X, FileType, Download, Copy } from 'lucide-react'
+import { Sparkles, FileSearch, FileEdit, FileText, Image, Upload, X, FileType, Download, Copy, Video, Music, Loader2 } from 'lucide-react'
 import { useDetection } from '@/hooks/useDetection'
+import { useAsyncDetection } from '@/hooks/useAsyncDetection'
 import { useHumanize } from '@/hooks/useHumanize'
 import { TextDiffViewer } from './text-diff-viewer'
 import html2canvas from 'html2canvas'
 import { toast } from 'sonner'
 
-const exampleText = `人工智能技术正在以前所未有的速度发展，深刻改变着我们的生活方式。从智能语音助手到自动驾驶汽车，AI的应用已经渗透到各个领域。机器学习算法能够从海量数据中学习模式，并做出准确的预测。深度神经网络的突破使得计算机视觉和自然语言处理取得了重大进展。`
+interface DetectionPanelProps {
+  mode: 'detect' | 'rewrite'
+}
+
+const exampleText = `Nestled in the historic and picturesque city of Hangzhou, renowned for its serene West Lake, Zhejiang University (ZJU) stands as one of China's most prestigious and comprehensive research institutions. With a legacy dating back to 1897 as Qiushi Academy, ZJU is consistently ranked among the top universities globally, celebrated for its academic rigor, cutting-edge research, and vibrant campus life. As a comprehensive research university, it offers a complete range of disciplines across science, engineering, agriculture, medicine, humanities, and social sciences. ZJU is committed to nurturing future leaders and innovators, fostering a dynamic environment where tradition meets global vision. Its vibrant community, state-of-the-art facilities, and strong emphasis on entrepreneurship and international collaboration make it a powerhouse of knowledge creation and a magnet for talented students and scholars from around the world.`
 
 // 根据AI概率获取样式和描述
-const getProbabilityStyles = (probability: number, detectionType: 'text' | 'image' = 'text') => {
+const getProbabilityStyles = (probability: number, detectionType: 'text' | 'image' | 'video' | 'audio' = 'text') => {
   if (probability < 50) {
     return {
-      label: detectionType === 'image' ? '非人工生成' : '人工创作',
+      label: detectionType === 'text' ? '人工创作' : '非AI生成',
       color: 'text-green-400',
       bgGradient: 'from-green-500/20 to-green-600/10',
       borderColor: 'border-green-400/30',
@@ -67,9 +72,8 @@ const getCategoryStyles = (category: 'ai' | 'human' | 'uncertain') => {
   }
 }
 
-export function DetectionPanel() {
-  const [mode, setMode] = useState<'detect' | 'rewrite'>('detect')
-  const [detectionType, setDetectionType] = useState<'text' | 'image'>('text')
+export function DetectionPanel({ mode }: DetectionPanelProps) {
+  const [detectionType, setDetectionType] = useState<'text' | 'image' | 'video' | 'audio'>('text')
   const [textInputMode, setTextInputMode] = useState<'input' | 'file'>('input') // 文本输入方式
   const [rewriteModel, setRewriteModel] = useState<'0' | '1' | '2'>('0') // 改写模型
   
@@ -77,24 +81,46 @@ export function DetectionPanel() {
   const [textInput, setTextInput] = useState('')
   const [textFile, setTextFile] = useState<File | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [audioFile, setAudioFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
   const posterRef = useRef<HTMLDivElement>(null)
   const [isExporting, setIsExporting] = useState(false)
   
   // 保存检测时的原始内容用于海报展示
   const [detectedContent, setDetectedContent] = useState<{
-    type: 'text' | 'image'
+    type: 'text' | 'image' | 'video' | 'audio'
     text?: string
     imageUrl?: string
+    videoUrl?: string
+    audioUrl?: string
+    fileName?: string
   } | null>(null)
   
+  // 同步检测（文本）
   const { isProcessing: isDetecting, result: detectionResult, detect, detectFile, reset: resetDetection } = useDetection()
+  // 异步检测（图片、视频、音频）
+  const { 
+    isProcessing: isAsyncDetecting, 
+    progress: asyncProgress, 
+    result: asyncResult, 
+    submitDetection,
+    reset: resetAsyncDetection 
+  } = useAsyncDetection()
+  // 降重
   const { isProcessing: isRewriting, result: rewriteResult, humanize, reset: resetRewrite } = useHumanize()
   
   // 统一的处理状态和结果
-  const isProcessing = mode === 'detect' ? isDetecting : isRewriting
-  const result = mode === 'detect' ? detectionResult : null
+  const isProcessing = mode === 'detect' 
+    ? (detectionType === 'text' ? isDetecting : isAsyncDetecting)
+    : isRewriting
+    
+  const result = mode === 'detect' 
+    ? (detectionType === 'text' ? detectionResult : asyncResult)
+    : null
 
   const handleDetect = async () => {
     if (mode === 'rewrite') {
@@ -142,37 +168,40 @@ export function DetectionPanel() {
             })
           }
         }
-      } else {
-        // 图像检测
+      } else if (detectionType === 'image') {
+        // 图像检测（异步）
         if (imageFile) {
           // 保存图片 URL
           const imageUrl = URL.createObjectURL(imageFile)
           setDetectedContent({ type: 'image', imageUrl })
           
-          await detectFile(imageFile, {
-            type: 'image',
-            enableFragmentAnalysis: false, // 图像不需要分片分析
-          })
+          await submitDetection(imageFile, 'image')
+        }
+      } else if (detectionType === 'video') {
+        // 视频检测（异步）
+        if (videoFile) {
+          const videoUrl = URL.createObjectURL(videoFile)
+          setDetectedContent({ type: 'video', videoUrl, fileName: videoFile.name })
+          
+          await submitDetection(videoFile, 'video')
+        }
+      } else if (detectionType === 'audio') {
+        // 音频检测（异步）
+        if (audioFile) {
+          const audioUrl = URL.createObjectURL(audioFile)
+          setDetectedContent({ type: 'audio', audioUrl, fileName: audioFile.name })
+          
+          await submitDetection(audioFile, 'audio')
         }
       }
     }
   }
 
-  const handleModeChange = (newMode: 'detect' | 'rewrite') => {
-    setMode(newMode)
-    setDetectedContent(null)
-    resetDetection()
-    resetRewrite()
-    // 切换到降重模式时，自动切换到文本模式
-    if (newMode === 'rewrite') {
-      setDetectionType('text')
-    }
-  }
-
-  const handleDetectionTypeChange = (type: 'text' | 'image') => {
+  const handleDetectionTypeChange = (type: 'text' | 'image' | 'video' | 'audio') => {
     setDetectionType(type)
     setDetectedContent(null)
     resetDetection()
+    resetAsyncDetection()
     resetRewrite()
   }
 
@@ -180,6 +209,7 @@ export function DetectionPanel() {
     setTextInputMode(mode)
     setDetectedContent(null)
     resetDetection()
+    resetAsyncDetection()
     resetRewrite()
   }
 
@@ -253,6 +283,74 @@ export function DetectionPanel() {
     setImageFile(null)
     if (imageInputRef.current) {
       imageInputRef.current.value = ''
+    }
+  }
+
+  // 视频文件选择处理
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('video/')) {
+        alert('请选择视频文件')
+        return
+      }
+      setVideoFile(file)
+    }
+  }
+
+  // 视频拖拽上传处理
+  const handleVideoDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      if (!file.type.startsWith('video/')) {
+        alert('请选择视频文件')
+        return
+      }
+      setVideoFile(file)
+    }
+  }
+
+  // 移除视频
+  const handleRemoveVideo = () => {
+    setVideoFile(null)
+    if (videoInputRef.current) {
+      videoInputRef.current.value = ''
+    }
+  }
+
+  // 音频文件选择处理
+  const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('audio/')) {
+        alert('请选择音频文件')
+        return
+      }
+      setAudioFile(file)
+    }
+  }
+
+  // 音频拖拽上传处理
+  const handleAudioDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      if (!file.type.startsWith('audio/')) {
+        alert('请选择音频文件')
+        return
+      }
+      setAudioFile(file)
+    }
+  }
+
+  // 移除音频
+  const handleRemoveAudio = () => {
+    setAudioFile(null)
+    if (audioInputRef.current) {
+      audioInputRef.current.value = ''
     }
   }
 
@@ -362,10 +460,10 @@ export function DetectionPanel() {
       <div className="max-w-7xl mx-auto">
         {/* 顶部检测类型切换 - 仅在检测模式下显示 */}
         {mode === 'detect' && (
-          <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="flex items-center justify-center gap-3 mb-8">
             <button
               onClick={() => handleDetectionTypeChange('text')}
-              className={`px-8 py-3 rounded-full font-medium transition-all ${
+              className={`px-6 py-3 rounded-full font-medium transition-all ${
                 detectionType === 'text'
                   ? 'bg-white text-black shadow-lg scale-105'
                   : 'bg-white/10 text-white/70 hover:bg-white/20'
@@ -376,7 +474,7 @@ export function DetectionPanel() {
             </button>
             <button
               onClick={() => handleDetectionTypeChange('image')}
-              className={`px-8 py-3 rounded-full font-medium transition-all ${
+              className={`px-6 py-3 rounded-full font-medium transition-all ${
                 detectionType === 'image'
                   ? 'bg-white text-black shadow-lg scale-105'
                   : 'bg-white/10 text-white/70 hover:bg-white/20'
@@ -385,6 +483,28 @@ export function DetectionPanel() {
               <Image className="w-5 h-5 inline-block mr-2" />
               图片检测
             </button>
+            <button
+              onClick={() => handleDetectionTypeChange('video')}
+              className={`px-6 py-3 rounded-full font-medium transition-all ${
+                detectionType === 'video'
+                  ? 'bg-white text-black shadow-lg scale-105'
+                  : 'bg-white/10 text-white/70 hover:bg-white/20'
+              }`}
+            >
+              <Video className="w-5 h-5 inline-block mr-2" />
+              视频检测
+            </button>
+            <button
+              onClick={() => handleDetectionTypeChange('audio')}
+              className={`px-6 py-3 rounded-full font-medium transition-all ${
+                detectionType === 'audio'
+                  ? 'bg-white text-black shadow-lg scale-105'
+                  : 'bg-white/10 text-white/70 hover:bg-white/20'
+              }`}
+            >
+              <Music className="w-5 h-5 inline-block mr-2" />
+              音频检测
+            </button>
           </div>
         )}
 
@@ -392,6 +512,7 @@ export function DetectionPanel() {
           {/* 输入区 */}
           <div className="glass-card rounded-2xl p-6 border border-white/10">
             {(detectionType === 'text' || mode === 'rewrite') ? (
+              // 文本输入区
               <>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white">
@@ -596,7 +717,8 @@ export function DetectionPanel() {
                   </>
                 )}
               </>
-            ) : (
+            ) : detectionType === 'image' ? (
+              // 图像检测区
               <>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white">图像检测</h3>
@@ -670,7 +792,162 @@ export function DetectionPanel() {
                   </Button>
                 </div>
               </>
-            )}
+            ) : detectionType === 'video' ? (
+              // 视频检测区
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">视频检测</h3>
+                </div>
+
+                {/* 视频上传区域 */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDrop={handleVideoDrop}
+                  onClick={() => !videoFile && videoInputRef.current?.click()}
+                  className="relative h-96 border-2 border-dashed border-white/20 rounded-xl bg-black/30 hover:border-orange-400/50 transition-colors overflow-hidden cursor-pointer"
+                >
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={handleVideoSelect}
+                    className="hidden"
+                  />
+                  
+                  {!videoFile ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
+                      <Video className="w-16 h-16 text-white/40 mb-4" />
+                      <p className="text-white/60 text-sm mb-2">点击或拖拽视频到这里上传</p>
+                      <p className="text-white/40 text-xs mt-4">
+                        支持格式：MP4, AVI, MOV, MKV, WEBM
+                      </p>
+                      <p className="text-white/40 text-xs">最大文件大小：100MB</p>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                      {/* 视频预览 */}
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        <video
+                          src={URL.createObjectURL(videoFile)}
+                          controls
+                          className="max-w-full max-h-full object-contain rounded-lg"
+                          onLoadedMetadata={(e) => URL.revokeObjectURL(e.currentTarget.src)}
+                        />
+                        <button
+                          onClick={handleRemoveVideo}
+                          className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-2 transition-colors"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+                      <div className="absolute bottom-4 left-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg p-3">
+                        <p className="text-white font-medium truncate text-sm">{videoFile.name}</p>
+                        <p className="text-white/60 text-xs mt-1">{formatFileSize(videoFile.size)}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm">
+                    {videoFile ? (
+                      <span className="text-white/60">
+                        视频已选择 · {formatFileSize(videoFile.size)}
+                      </span>
+                    ) : (
+                      <span className="text-white/40">请选择或拖拽视频</span>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleDetect}
+                    disabled={!videoFile || isProcessing}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                  >
+                    {isProcessing ? '处理中...' : '开始检测'}
+                  </Button>
+                </div>
+              </>
+            ) : detectionType === 'audio' ? (
+              // 音频检测区
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white">音频检测</h3>
+                </div>
+
+                {/* 音频上传区域 */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDrop={handleAudioDrop}
+                  onClick={() => !audioFile && audioInputRef.current?.click()}
+                  className="relative h-96 border-2 border-dashed border-white/20 rounded-xl bg-black/30 hover:border-orange-400/50 transition-colors overflow-hidden cursor-pointer"
+                >
+                  <input
+                    ref={audioInputRef}
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleAudioSelect}
+                    className="hidden"
+                  />
+                  
+                  {!audioFile ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
+                      <Music className="w-16 h-16 text-white/40 mb-4" />
+                      <p className="text-white/60 text-sm mb-2">点击或拖拽音频到这里上传</p>
+                      <p className="text-white/40 text-xs mt-4">
+                        支持格式：MP3, WAV, AAC, FLAC, OGG
+                      </p>
+                      <p className="text-white/40 text-xs">最大文件大小：50MB</p>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                      {/* 音频播放器 */}
+                      <div className="w-full max-w-md">
+                        <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                          <div className="flex items-center gap-3 mb-4">
+                            <Music className="w-10 h-10 text-orange-400 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-medium truncate">{audioFile.name}</p>
+                              <p className="text-white/60 text-sm mt-1">{formatFileSize(audioFile.size)}</p>
+                            </div>
+                            <button
+                              onClick={handleRemoveAudio}
+                              className="text-white/60 hover:text-white transition-colors flex-shrink-0"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <audio
+                            src={URL.createObjectURL(audioFile)}
+                            controls
+                            className="w-full"
+                            onLoadedMetadata={(e) => URL.revokeObjectURL(e.currentTarget.src)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm">
+                    {audioFile ? (
+                      <span className="text-white/60">
+                        音频已选择 · {formatFileSize(audioFile.size)}
+                      </span>
+                    ) : (
+                      <span className="text-white/40">请选择或拖拽音频</span>
+                    )}
+                  </div>
+                  <Button
+                    onClick={handleDetect}
+                    disabled={!audioFile || isProcessing}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                  >
+                    {isProcessing ? '处理中...' : '开始检测'}
+                  </Button>
+                </div>
+              </>
+            ) : null}
           </div>
 
           {/* 结果区 */}
@@ -742,10 +1019,49 @@ export function DetectionPanel() {
             ) : (
               // 检测模式结果展示
               !result ? (
-                <div className="h-96 flex flex-col items-center justify-center text-white/40">
-                  <FileSearch className="w-16 h-16 mb-4" />
-                  <p>结果将在这里显示</p>
-                </div>
+                // 没有结果时的显示
+                detectionType !== 'text' && isAsyncDetecting ? (
+                  // 异步检测进度显示
+                  <div className="h-96 flex flex-col items-center justify-center p-6">
+                    <div className="w-full max-w-md space-y-6">
+                      {/* 进度图标 */}
+                      <div className="flex justify-center">
+                        <Loader2 className="w-16 h-16 text-orange-400 animate-spin" />
+                      </div>
+                      
+                      {/* 进度信息 */}
+                      <div className="text-center space-y-2">
+                        <div className="text-white font-medium">{asyncProgress.message}</div>
+                        {asyncProgress.percentage !== undefined && (
+                          <div className="text-white/60 text-sm">{asyncProgress.percentage}%</div>
+                        )}
+                      </div>
+                      
+                      {/* 进度条 */}
+                      {asyncProgress.percentage !== undefined && (
+                        <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-300"
+                            style={{ width: `${asyncProgress.percentage}%` }}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* 提示信息 */}
+                      <div className="text-center text-white/50 text-xs">
+                        {detectionType === 'video' && '视频检测通常需要5-15分钟'}
+                        {detectionType === 'audio' && '音频检测通常需要1-5分钟'}
+                        {detectionType === 'image' && '图片检测通常需要10-30秒'}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // 默认等待状态
+                  <div className="h-96 flex flex-col items-center justify-center text-white/40">
+                    <FileSearch className="w-16 h-16 mb-4" />
+                    <p>结果将在这里显示</p>
+                  </div>
+                )
               ) : (
               <div className="space-y-4">
                 {/* 整体检测结果卡片 */}
@@ -784,7 +1100,7 @@ export function DetectionPanel() {
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                      <span className="text-white/80">{detectionType === 'image' ? '非人工生成' : '人工创作'}</span>
+                      <span className="text-white/80">{detectionType === 'image' ? '非AI生成' : '人工创作'}</span>
                       <span className="text-white/50">&lt;50%</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -845,32 +1161,6 @@ export function DetectionPanel() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* 底部模式切换 */}
-        <div className="flex items-center justify-center gap-4 mt-8">
-          <button
-            onClick={() => handleModeChange('detect')}
-            className={`px-6 py-2.5 rounded-full font-medium transition-all text-sm ${
-              mode === 'detect'
-                ? 'bg-orange-500 text-white'
-                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <FileSearch className="w-4 h-4 inline-block mr-2" />
-            AI检测
-          </button>
-          <button
-            onClick={() => handleModeChange('rewrite')}
-            className={`px-6 py-2.5 rounded-full font-medium transition-all text-sm ${
-              mode === 'rewrite'
-                ? 'bg-orange-500 text-white'
-                : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <FileEdit className="w-4 h-4 inline-block mr-2" />
-            AI降重
-          </button>
         </div>
       </div>
 
@@ -1009,7 +1299,7 @@ export function DetectionPanel() {
               {(() => {
                 const probability = result.aiProbability
                 const color = probability < 50 ? '#4ade80' : probability < 80 ? '#fb923c' : '#f87171'
-                const label = probability < 50 ? (detectionType === 'image' ? '非人工生成' : '人工创作') : probability < 80 ? '疑似AI' : 'AI生成'
+                const label = probability < 50 ? (detectionType === 'image' ? '非AI生成' : '人工创作') : probability < 80 ? '疑似AI' : 'AI生成'
                 return (
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '4.5rem', fontWeight: 'bold', marginBottom: '8px', color }}>
@@ -1055,7 +1345,7 @@ export function DetectionPanel() {
                   border: '1px solid rgba(74, 222, 128, 0.3)'
                 }}
               >
-                <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4ade80' }}>{detectionType === 'image' ? '非人工生成' : '人工创作'}</div>
+                <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4ade80' }}>{detectionType === 'image' ? '非AI生成' : '人工创作'}</div>
                 <div style={{ fontSize: '0.75rem', marginTop: '4px', color: 'rgba(255, 255, 255, 0.6)' }}>&lt;50%</div>
               </div>
               <div 

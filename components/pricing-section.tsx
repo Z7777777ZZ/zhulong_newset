@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Check, X, Mail, Copy } from "lucide-react"
 import { useState, useEffect } from "react"
+import Link from "next/link"
 
 export function PricingSection() {
   const [isVisible, setIsVisible] = useState(false)
@@ -220,15 +221,17 @@ export function PricingSection() {
                   )}
                 </div>
 
-                <Button
-                  className={`w-full h-12 rounded-full font-medium text-base mb-8 transition-all duration-300 ${
-                    plan.popular
-                      ? "bg-white hover:bg-white/90 text-black"
-                      : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
-                  }`}
-                >
-                  {plan.cta}
-                </Button>
+                <Link href="/login">
+                  <Button
+                    className={`w-full h-12 rounded-full font-medium text-base mb-8 transition-all duration-300 ${
+                      plan.popular
+                        ? "bg-white hover:bg-white/90 text-black"
+                        : "bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Button>
+                </Link>
 
                 <div className="space-y-4 flex-1">
                   {plan.features.map((feature) => (

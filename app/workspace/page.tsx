@@ -12,7 +12,7 @@ import { BillingPanel } from '@/components/workspace/billing-panel'
 import { SettingsPanel } from '@/components/workspace/settings-panel'
 
 function WorkspaceContent() {
-  const [activeTab, setActiveTab] = useState<'use' | 'dashboard'>('use')
+  const [activeTab, setActiveTab] = useState<'detection' | 'humanize' | 'dashboard'>('detection')
   const [dashboardView, setDashboardView] = useState<'overview' | 'history' | 'usage' | 'billing' | 'settings'>('overview')
   const { user, logout } = useAuth()
 
@@ -34,12 +34,20 @@ function WorkspaceContent() {
           {/* Tab切换 */}
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setActiveTab('use')}
+              onClick={() => setActiveTab('detection')}
               className={`px-4 py-1.5 text-sm font-medium transition-all ${
-                activeTab === 'use' ? 'text-white' : 'text-white/50 hover:text-white/80'
+                activeTab === 'detection' ? 'text-white' : 'text-white/50 hover:text-white/80'
               }`}
             >
-              使用
+              AI检测
+            </button>
+            <button
+              onClick={() => setActiveTab('humanize')}
+              className={`px-4 py-1.5 text-sm font-medium transition-all ${
+                activeTab === 'humanize' ? 'text-white' : 'text-white/50 hover:text-white/80'
+              }`}
+            >
+              降AI率
             </button>
             <button
               onClick={() => setActiveTab('dashboard')}
@@ -58,8 +66,11 @@ function WorkspaceContent() {
 
       {/* 主内容区 */}
       <main className="pt-14">
-        {/* 使用界面 */}
-        {activeTab === 'use' && <DetectionPanel />}
+        {/* AI检测界面 */}
+        {activeTab === 'detection' && <DetectionPanel mode="detect" />}
+        
+        {/* 降AI率界面 */}
+        {activeTab === 'humanize' && <DetectionPanel mode="rewrite" />}
 
         {/* 面板界面 */}
         {activeTab === 'dashboard' && (

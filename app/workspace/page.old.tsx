@@ -88,7 +88,7 @@ export default function WorkspacePage() {
     memberDays: 89,
   }
 
-  const exampleText = `人工智能技术正在以前所未有的速度发展，深刻改变着我们的生活方式。从智能语音助手到自动驾驶汽车，AI的应用已经渗透到各个领域。机器学习算法能够从海量数据中学习模式，并做出准确的预测。深度神经网络的突破使得计算机视觉和自然语言处理取得了重大进展。`
+  const exampleText = `Nestled in the historic and picturesque city of Hangzhou, renowned for its serene West Lake, Zhejiang University (ZJU) stands as one of China's most prestigious and comprehensive research institutions. With a legacy dating back to 1897 as Qiushi Academy, ZJU is consistently ranked among the top universities globally, celebrated for its academic rigor, cutting-edge research, and vibrant campus life. As a comprehensive research university, it offers a complete range of disciplines across science, engineering, agriculture, medicine, humanities, and social sciences. ZJU is committed to nurturing future leaders and innovators, fostering a dynamic environment where tradition meets global vision. Its vibrant community, state-of-the-art facilities, and strong emphasis on entrepreneurship and international collaboration make it a powerhouse of knowledge creation and a magnet for talented students and scholars from around the world.`
 
   // 模拟历史记录数据
   const historyRecords = [

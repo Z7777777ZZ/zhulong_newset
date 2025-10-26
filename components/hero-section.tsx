@@ -58,7 +58,7 @@ export function HeroSection() {
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-none mb-4 max-w-4xl">
             重新定义
             <br />
-            AIGC检测置信度
+            人类创作价值
           </h1>
 
           <p className="text-xl md:text-2xl text-white/60 max-w-2xl mb-8 leading-relaxed">

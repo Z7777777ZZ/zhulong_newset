@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Check, Zap, CreditCard, QrCode, X, ChevronLeft, ChevronRight, Gift } from 'lucide-react'
+import { Check, Zap, CreditCard, QrCode, X, ChevronLeft, ChevronRight, Gift, FileText } from 'lucide-react'
 import { useRecharge, useAlipay } from '@/hooks/useRecharge'
 import { useAuth } from '@/components/providers/auth-provider'
 import { toast } from 'sonner'
@@ -37,6 +37,9 @@ export function BillingPanel() {
   // 邀请码相关状态
   const [invitationCode, setInvitationCode] = useState('')
   const [isUsingCode, setIsUsingCode] = useState(false)
+
+  // 开发票相关状态
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false)
 
   const { qrCode, createQrCode, queryStatus, cancelOrder } = useAlipay()
 
@@ -249,7 +252,18 @@ export function BillingPanel() {
       {/* 交易记录 */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-white">交易记录</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-xl font-bold text-white">交易记录</h3>
+            <Button
+              onClick={() => setShowInvoiceDialog(true)}
+              variant="outline"
+              size="sm"
+              className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:text-white"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              申请开票
+            </Button>
+          </div>
           <Select value={timeFilter} onValueChange={handleTimeFilterChange}>
             <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
               <SelectValue placeholder="选择时间范围" />
@@ -277,7 +291,11 @@ export function BillingPanel() {
                   <div key={transaction.id} className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
                     <div className="flex-1">
                       <div className="text-white font-medium mb-1">{transaction.packageName}</div>
-                      <div className="text-white/50 text-sm">{new Date(transaction.date).toLocaleString('zh-CN')}</div>
+                      <div className="flex items-center gap-3 text-white/50 text-sm">
+                        <span>{new Date(transaction.date).toLocaleString('zh-CN')}</span>
+                        <span>·</span>
+                        <span>{transaction.paymentMethod || '支付宝'}</span>
+                      </div>
                     </div>
                     <div className="text-right ml-4">
                       <div className="text-white font-bold mb-1">¥{transaction.amount}</div>
@@ -361,6 +379,37 @@ export function BillingPanel() {
               className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white disabled:opacity-50"
             >
               {checking ? '检查中...' : '我已支付完成'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 开发票弹窗 */}
+      <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+        <DialogContent className="bg-zinc-900 border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>申请开票</DialogTitle>
+            <DialogDescription className="text-white/60">
+              请添加企业微信，我们将协助您完成开票流程
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center py-6">
+            <div className="bg-white p-4 rounded-lg">
+              <img src="/wechat-qrcode.jpg" alt="企业微信二维码" className="w-48 h-48 object-contain" />
+            </div>
+            <p className="mt-4 text-white/60 text-sm text-center">
+              扫描二维码添加企业微信
+            </p>
+            <p className="mt-2 text-white/40 text-xs text-center">
+              添加成功后，请提供订单号和开票信息
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setShowInvoiceDialog(false)}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+            >
+              我知道了
             </Button>
           </div>
         </DialogContent>

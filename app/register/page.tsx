@@ -24,7 +24,11 @@ import { authApi, ApiError } from "@/lib/api"
 
 const registerSchema = z
   .object({
-    username: z.string().min(2, "用户名至少 2 个字符"),
+    username: z
+      .string()
+      .min(4, "用户名至少 4 个字符")
+      .max(20, "用户名最多 20 个字符")
+      .regex(/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/, "用户名只能包含字母、数字、下划线和中文"),
     email: z.string().email("请输入有效的邮箱地址"),
     emailVerificationCode: z.string().min(4, "请输入验证码"),
     password: z.string().min(8, "密码至少 8 位字符"),
@@ -150,13 +154,16 @@ export default function RegisterPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm text-white/80 font-medium">用户名</FormLabel>
+                    <FormLabel className="text-sm text-white/80 font-medium">
+                      用户名 
+                      <span className="text-white/50 text-xs ml-2">（4-20个字符）</span>
+                    </FormLabel>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                       <FormControl>
                         <Input
                           type="text"
-                          placeholder="张三"
+                          placeholder="请输入用户名"
                           className="w-full h-12 pl-12 pr-4 bg-white/5 border-white/10 text-white placeholder:text-white/30 rounded-xl focus:bg-white/10 focus:border-orange-500/50 transition-all"
                           {...field}
                         />

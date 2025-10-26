@@ -59,7 +59,7 @@ function WorkspaceContent() {
       {/* 主内容区 */}
       <main className="pt-14">
         {/* 使用界面 */}
-        {activeTab === 'use' && <DetectionPanel />}
+        {activeTab === 'use' && <DetectionPanel mode="detect" />}
 
         {/* 面板界面 */}
         {activeTab === 'dashboard' && (

@@ -381,6 +381,33 @@ export interface DetectionRequest {
   splitStrategy?: 'paragraph' | 'semantic' | 'default' | 'sentence' | 'fixed'
 }
 
+// 异步检测任务提交请求
+export interface AsyncDetectionSubmitRequest {
+  type: 'image' | 'audio' | 'video'
+  file: File
+}
+
+// 异步检测任务提交响应
+export interface AsyncDetectionSubmitResponse {
+  taskId: string
+  type: 'image' | 'audio' | 'video'
+  status: 'processing' | 'failed'
+  submitTime: string
+  message: string
+  errorMessage?: string
+}
+
+// 异步检测任务查询响应
+export interface AsyncDetectionQueryResponse {
+  taskId: string
+  type: 'image' | 'audio' | 'video'
+  status: 'processing' | 'completed' | 'failed'
+  submitTime: string
+  completeTime?: string
+  result?: DetectionResultResponse
+  errorMessage?: string
+}
+
 // 句子级别的高亮标注
 export interface SentenceHighlight {
   sentence: string
@@ -538,7 +565,7 @@ export const userApi = {
 
 // 检测API
 export const detectionApi = {
-  // 发起AIGC检测
+  // 发起AIGC检测（同步，用于文本检测）
   detect: (data: DetectionRequest) => {
     const formData = new FormData()
 
@@ -564,6 +591,19 @@ export const detectionApi = {
 
     return apiService.postForm<DetectionResultResponse>('/detection/detect', formData)
   },
+
+  // 提交异步检测任务（用于视频、音频检测）
+  submitAsyncDetection: (data: AsyncDetectionSubmitRequest) => {
+    const formData = new FormData()
+    formData.append('type', data.type)
+    formData.append('file', data.file)
+    
+    return apiService.postForm<AsyncDetectionSubmitResponse>('/detection/submit', formData)
+  },
+
+  // 查询异步检测任务结果
+  queryAsyncDetection: (taskId: string) =>
+    apiService.get<AsyncDetectionQueryResponse>(`/detection/task/${taskId}`, undefined, true),
 
   // 查询近期检测记录
   getRecentDetections: (limit?: number) =>

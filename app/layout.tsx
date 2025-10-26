@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { Toaster } from '@/components/ui/sonner'
+
+// 条件性导入 Vercel Analytics
+const Analytics = process.env.VERCEL ? require('@vercel/analytics/next').Analytics : null
 
 export const metadata: Metadata = {
   title: 'DragonAI',
@@ -27,7 +29,7 @@ export default function RootLayout({
             <Toaster position="top-center" richColors />
           </AuthProvider>
         </ThemeProvider>
-        <Analytics />
+        {Analytics && <Analytics />}
       </body>
     </html>
   )
