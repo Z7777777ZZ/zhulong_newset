@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { authApi, type EmailLoginRequest, type JwtResponse, type RegisterRequest, type UserInfoResponse, userApi } from '@/lib/api'
+import { authApi, type EmailLoginRequest, type GoogleLoginRequest, type JwtResponse, type RegisterRequest, type UserInfoResponse, userApi } from '@/lib/api'
 import { clearStoredToken, getStoredToken, setStoredToken } from '@/lib/token-storage'
 
 type AuthContextValue = {
@@ -13,6 +13,7 @@ type AuthContextValue = {
   loading: boolean
   loginWithEmail: (input: EmailLoginRequest & { rememberMe?: boolean }) => Promise<UserInfoResponse>
   loginWithUsername: (input: { username: string; password: string; rememberMe?: boolean }) => Promise<UserInfoResponse>
+  loginWithGoogle: (idToken: string) => Promise<UserInfoResponse>
   logout: (redirect?: string) => void
   refreshUser: () => Promise<UserInfoResponse>
   register: (input: RegisterRequest) => Promise<void>
@@ -112,6 +113,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     [handleLoginSuccess]
   )
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      setLoading(true)
+      try {
+        const response = await authApi.loginWithGoogle({ idToken })
+        // Google 登录默认记住登录状态
+        return await handleLoginSuccess(response.data, true)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [handleLoginSuccess]
+  )
+
   const logout = useCallback(
     (redirect?: string) => {
       clearStoredToken()
@@ -148,11 +163,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loading,
       loginWithEmail,
       loginWithUsername,
+      loginWithGoogle,
       logout,
       refreshUser,
       register,
     }),
-    [user, token, initializing, loading, loginWithEmail, loginWithUsername, logout, refreshUser, register]
+    [user, token, initializing, loading, loginWithEmail, loginWithUsername, loginWithGoogle, logout, refreshUser, register]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

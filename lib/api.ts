@@ -22,7 +22,7 @@ export class ApiError<T = unknown> extends Error {
 }
 
 // 不需要认证的接口列表
-const PUBLIC_ENDPOINTS = ['/auth/login', '/auth/email-login', '/auth/register', '/auth/verify-email', '/auth/reset-password']
+const PUBLIC_ENDPOINTS = ['/auth/login', '/auth/email-login', '/auth/register', '/auth/verify-email', '/auth/reset-password', '/auth/google-login']
 
 // 请求拦截器：添加认证头
 const getAuthHeaders = (endpoint: string): Record<string, string> => {
@@ -300,6 +300,10 @@ export interface EmailLoginRequest {
   password: string
 }
 
+export interface GoogleLoginRequest {
+  idToken: string
+}
+
 export interface RegisterRequest {
   username: string
   password: string
@@ -526,6 +530,10 @@ export const authApi = {
   // 邮箱密码登录
   loginWithEmail: (data: EmailLoginRequest) =>
     apiService.post<JwtResponse>('/auth/email-login', data),
+
+  // Google 登录
+  loginWithGoogle: (data: GoogleLoginRequest) =>
+    apiService.post<JwtResponse>('/auth/google-login', data),
 
   // 用户注册
   register: (data: RegisterRequest) =>
