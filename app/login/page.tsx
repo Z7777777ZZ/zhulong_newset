@@ -162,7 +162,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                disabled={loading || googleLoading}
+                disabled={loading}
                 className="w-full h-12 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg shadow-orange-500/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-orange-500/50 disabled:opacity-70 disabled:hover:scale-100"
               >
                 {loading ? (

@@ -59,13 +59,20 @@ export function useAsyncDetection() {
           setIsProcessing(false)
           stopPolling()
           toast.error(response.data.errorMessage || '检测失败，请稍后重试', { duration: 4000 })
-        } else {
-          // 仍在处理中
-          // 根据轮询次数估算进度
+        } else if (response.data.status === 'pending') {
+          // 等待处理
+          const estimatedProgress = Math.min(10 + pollingCountRef.current, 25)
+          setProgress({
+            status: 'processing',
+            message: response.data.message || '等待处理中...',
+            percentage: estimatedProgress,
+          })
+        } else if (response.data.status === 'processing') {
+          // 正在处理中
           const estimatedProgress = Math.min(30 + pollingCountRef.current * 2, 95)
           setProgress({
             status: 'processing',
-            message: '正在检测中，请稍候...',
+            message: response.data.message || '正在检测中，请稍候...',
             percentage: estimatedProgress,
           })
         }
@@ -87,8 +94,8 @@ export function useAsyncDetection() {
     }, 3000) // 每3秒轮询一次
   }
 
-  // 提交异步检测任务
-  const submitDetection = async (file: File, type: 'image' | 'audio' | 'video') => {
+  // 提交异步检测任务（仅用于视频和音频）
+  const submitDetection = async (file: File, type: 'audio' | 'video') => {
     if (!file) {
       toast.error('请选择要检测的文件', { duration: 3000 })
       return null
@@ -96,7 +103,6 @@ export function useAsyncDetection() {
 
     // 文件大小限制检查
     const maxSizes: Record<typeof type, number> = {
-      image: 50 * 1024 * 1024,   // 50MB
       audio: 500 * 1024 * 1024,  // 500MB
       video: 500 * 1024 * 1024,  // 500MB
     }
@@ -117,7 +123,7 @@ export function useAsyncDetection() {
     })
 
     // 显示处理提示
-    const typeNames = { image: '图片', audio: '音频', video: '视频' }
+    const typeNames = { audio: '音频', video: '视频' }
     toast.info(`正在提交${typeNames[type]}检测任务，请稍候...`, { duration: 3000 })
 
     try {

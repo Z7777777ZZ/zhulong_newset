@@ -73,8 +73,9 @@ export function useDetection() {
       return null
     }
 
-    // 检查文件大小（10MB限制）
-    const maxSize = 10 * 1024 * 1024
+    // 根据文件类型设置不同的大小限制
+    const fileType = options?.type || 'text'
+    const maxSize = fileType === 'image' ? 10 * 1024 * 1024 : 10 * 1024 * 1024 // 图片和文本都是10MB
     if (file.size > maxSize) {
       toast.error(`文件大小超出限制，最大支持10MB。当前文件：${(file.size / 1024 / 1024).toFixed(2)}MB`, { duration: 5000 })
       return null

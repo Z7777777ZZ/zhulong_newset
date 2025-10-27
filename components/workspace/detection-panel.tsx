@@ -115,11 +115,11 @@ export function DetectionPanel({ mode }: DetectionPanelProps) {
   
   // 统一的处理状态和结果
   const isProcessing = mode === 'detect' 
-    ? (detectionType === 'text' ? isDetecting : isAsyncDetecting)
+    ? (detectionType === 'text' || detectionType === 'image' ? isDetecting : isAsyncDetecting)
     : isRewriting
     
   const result = mode === 'detect' 
-    ? (detectionType === 'text' ? detectionResult : asyncResult)
+    ? (detectionType === 'text' || detectionType === 'image' ? detectionResult : asyncResult)
     : null
 
   const handleDetect = async () => {
@@ -169,13 +169,16 @@ export function DetectionPanel({ mode }: DetectionPanelProps) {
           }
         }
       } else if (detectionType === 'image') {
-        // 图像检测（异步）
+        // 图像检测（同步）
         if (imageFile) {
           // 保存图片 URL
           const imageUrl = URL.createObjectURL(imageFile)
           setDetectedContent({ type: 'image', imageUrl })
           
-          await submitDetection(imageFile, 'image')
+          await detectFile(imageFile, {
+            type: 'image',
+            enableFragmentAnalysis: false,
+          })
         }
       } else if (detectionType === 'video') {
         // 视频检测（异步）
@@ -1020,8 +1023,8 @@ export function DetectionPanel({ mode }: DetectionPanelProps) {
               // 检测模式结果展示
               !result ? (
                 // 没有结果时的显示
-                detectionType !== 'text' && isAsyncDetecting ? (
-                  // 异步检测进度显示
+                (detectionType === 'video' || detectionType === 'audio') && isAsyncDetecting ? (
+                  // 异步检测进度显示（仅视频和音频）
                   <div className="h-96 flex flex-col items-center justify-center p-6">
                     <div className="w-full max-w-md space-y-6">
                       {/* 进度图标 */}
@@ -1051,7 +1054,6 @@ export function DetectionPanel({ mode }: DetectionPanelProps) {
                       <div className="text-center text-white/50 text-xs">
                         {detectionType === 'video' && '视频检测通常需要5-15分钟'}
                         {detectionType === 'audio' && '音频检测通常需要1-5分钟'}
-                        {detectionType === 'image' && '图片检测通常需要10-30秒'}
                       </div>
                     </div>
                   </div>
