@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
-import { FileText, Image as ImageIcon, Music, Video } from "lucide-react"
+import { useEffect, useRef, useState, useMemo } from "react"
+import { FileText, Image as ImageIcon, Music, Video, ChevronLeft, ChevronRight } from "lucide-react"
 
 type FeatureType = 'text' | 'image' | 'audio' | 'video'
 
@@ -29,9 +29,10 @@ export function HeroSection() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const sectionRef = useRef<HTMLDivElement>(null)
   const productRef = useRef<HTMLDivElement>(null)
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
 
   // Feature cards data
-  const features: FeatureCard[] = [
+  const features: FeatureCard[] = useMemo(() => [
     {
       type: 'text',
       icon: FileText,
@@ -50,7 +51,7 @@ export function HeroSection() {
             <div className="text-white/70 text-sm">样本文本分析</div>
             <div className="bg-black/40 rounded-xl p-4 space-y-2">
               <p className="text-white/90 text-sm leading-relaxed">
-                <span className="bg-green-500/20 px-1 rounded">人工智能技术的发展</span>
+                <span className="bg-yellow-500/20 px-1 rounded">人工智能技术的发展</span>
                 <span className="bg-orange-500/30 px-1 rounded border-b border-orange-400">正在深刻改变着我们的生活。</span>
               </p>
             </div>
@@ -78,8 +79,8 @@ export function HeroSection() {
         speed: '<2s',
         processed: '5M+'
       },
-      gradient: 'from-blue-500/20 via-cyan-500/20 to-blue-500/20',
-      iconColor: 'text-blue-400',
+      gradient: 'from-amber-500/20 via-yellow-500/20 to-amber-500/20',
+      iconColor: 'text-amber-400',
       demoContent: (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -87,7 +88,7 @@ export function HeroSection() {
             <div className="bg-black/40 rounded-xl p-3">
               <div className="grid grid-cols-4 gap-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg border border-white/10 flex items-center justify-center">
+                  <div key={i} className="aspect-square bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-lg border border-white/10 flex items-center justify-center">
                     <span className="text-white/40 text-xs">R{i}</span>
                   </div>
                 ))}
@@ -96,7 +97,7 @@ export function HeroSection() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-3xl font-bold text-blue-400">92%</div>
+              <div className="text-3xl font-bold text-amber-400">92%</div>
               <div className="text-white/50 text-xs">AI生成概率</div>
             </div>
             <div>
@@ -161,8 +162,8 @@ export function HeroSection() {
         speed: '<5s',
         processed: '1M+'
       },
-      gradient: 'from-green-500/20 via-emerald-500/20 to-green-500/20',
-      iconColor: 'text-green-400',
+      gradient: 'from-red-500/20 via-orange-500/20 to-red-500/20',
+      iconColor: 'text-red-400',
       demoContent: (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -170,19 +171,19 @@ export function HeroSection() {
             <div className="bg-black/40 rounded-xl p-4">
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="aspect-video bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded border border-white/10 flex items-center justify-center">
+                  <div key={i} className="aspect-video bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded border border-white/10 flex items-center justify-center">
                     <span className="text-white/40 text-xs">F{i}</span>
                   </div>
                 ))}
               </div>
               <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" style={{ width: '75%' }} />
+                <div className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full" style={{ width: '75%' }} />
               </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-3xl font-bold text-green-400">75%</div>
+              <div className="text-3xl font-bold text-red-400">75%</div>
               <div className="text-white/50 text-xs">AI生成概率</div>
             </div>
             <div>
@@ -193,7 +194,7 @@ export function HeroSection() {
         </div>
       )
     }
-  ]
+  ], [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -230,16 +231,71 @@ export function HeroSection() {
 
   // Auto-rotate features
   useEffect(() => {
-    const interval = setInterval(() => {
+    const startAutoPlay = () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current)
+      }
+      autoPlayRef.current = setInterval(() => {
+        setIsTransitioning(true)
+        setTimeout(() => {
+          setActiveFeature((prev) => (prev + 1) % features.length)
+          setIsTransitioning(false)
+        }, 500)
+      }, 5000) // Change every 5 seconds
+    }
+
+    startAutoPlay()
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current)
+      }
+    }
+  }, [features.length])
+
+  // Handle manual feature change
+  const handleFeatureChange = (index: number) => {
+    if (index === activeFeature) return
+    
+    // Clear current autoplay
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current)
+    }
+
+    // Change feature
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setActiveFeature(index)
+      setIsTransitioning(false)
+    }, 300)
+
+    // Restart autoplay
+    autoPlayRef.current = setInterval(() => {
       setIsTransitioning(true)
       setTimeout(() => {
         setActiveFeature((prev) => (prev + 1) % features.length)
         setIsTransitioning(false)
       }, 500)
-    }, 5000) // Change every 5 seconds
+    }, 5000)
+  }
 
-    return () => clearInterval(interval)
-  }, [features.length])
+  // Navigate to previous feature
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Previous clicked, current:', activeFeature)
+    const newIndex = activeFeature === 0 ? features.length - 1 : activeFeature - 1
+    handleFeatureChange(newIndex)
+  }
+
+  // Navigate to next feature
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Next clicked, current:', activeFeature)
+    const newIndex = (activeFeature + 1) % features.length
+    handleFeatureChange(newIndex)
+  }
 
   const currentFeature = features[activeFeature]
 
@@ -288,19 +344,20 @@ export function HeroSection() {
       </div>
 
       <div className="relative z-10 flex-1 flex items-end justify-center pb-16 px-8">
-        <div
-          ref={productRef}
-          className={`transition-all duration-1500 ease-out ${
-            hasScrolled ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"
-          }`}
-          style={{
-            transform: hasScrolled
-              ? `perspective(1200px) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg) translateY(0px)`
-              : "perspective(1200px) rotateX(15deg) translateY(100px)",
-            transformStyle: "preserve-3d",
-            transition: "transform 0.3s ease-out, opacity 1.5s ease-out",
-          }}
-        >
+        <div className="relative">
+          <div
+            ref={productRef}
+            className={`transition-all duration-1500 ease-out ${
+              hasScrolled ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"
+            }`}
+            style={{
+              transform: hasScrolled
+                ? `perspective(1200px) rotateX(${mousePosition.y * 5}deg) rotateY(${mousePosition.x * 5}deg) translateY(0px)`
+                : "perspective(1200px) rotateX(15deg) translateY(100px)",
+              transformStyle: "preserve-3d",
+              transition: "transform 0.3s ease-out, opacity 1.5s ease-out",
+            }}
+          >
           <div className="relative w-[900px] h-[500px] max-w-full">
             {/* Main card with glassmorphism */}
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl border border-white/20 shadow-2xl overflow-hidden">
@@ -361,27 +418,6 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                {/* Feature indicators */}
-                <div className="flex items-center justify-center gap-2 mt-4">
-                  {features.map((feature, index) => (
-                    <button
-                      key={feature.type}
-                      onClick={() => {
-                        setIsTransitioning(true)
-                        setTimeout(() => {
-                          setActiveFeature(index)
-                          setIsTransitioning(false)
-                        }, 300)
-                      }}
-                      className={`transition-all duration-300 ${
-                        index === activeFeature 
-                          ? 'w-8 h-2 bg-white rounded-full' 
-                          : 'w-2 h-2 bg-white/30 rounded-full hover:bg-white/50'
-                      }`}
-                      aria-label={`Switch to ${feature.title}`}
-                    />
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -390,6 +426,52 @@ export function HeroSection() {
               className="absolute inset-0 rounded-3xl bg-black/40 blur-3xl -z-10"
               style={{ transform: "translateZ(-50px) scale(0.95)" }}
             />
+          </div>
+          </div>
+          
+          {/* Feature indicators with navigation - Outside 3D transform */}
+          <div className="flex items-center justify-center gap-4 mt-6">
+            {/* Previous button */}
+            <button
+              type="button"
+              onClick={handlePrevious}
+              className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 flex items-center justify-center group cursor-pointer"
+              aria-label="Previous feature"
+            >
+              <ChevronLeft className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+            </button>
+
+            {/* Indicators */}
+            <div className="flex items-center gap-2">
+              {features.map((feature, index) => (
+                <button
+                  type="button"
+                  key={feature.type}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    console.log('Indicator clicked:', index)
+                    handleFeatureChange(index)
+                  }}
+                  className={`transition-all duration-300 cursor-pointer ${
+                    index === activeFeature 
+                      ? 'w-8 h-2 bg-white rounded-full' 
+                      : 'w-2 h-2 bg-white/30 rounded-full hover:bg-white/50'
+                  }`}
+                  aria-label={`Switch to ${feature.title}`}
+                />
+              ))}
+            </div>
+
+            {/* Next button */}
+            <button
+              type="button"
+              onClick={handleNext}
+              className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 flex items-center justify-center group cursor-pointer"
+              aria-label="Next feature"
+            >
+              <ChevronRight className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
+            </button>
           </div>
         </div>
       </div>

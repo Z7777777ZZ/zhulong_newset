@@ -234,6 +234,31 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
+
+        {/* Simple Footer */}
+        <div className="mt-8 text-center space-y-3">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-white/40 text-xs">
+            <Link href="/privacy" className="hover:text-white transition-colors cursor-pointer">
+              隐私政策
+            </Link>
+            <span>|</span>
+            <Link href="/terms" className="hover:text-white transition-colors cursor-pointer">
+              用户协议
+            </Link>
+            <span>|</span>
+            <a 
+              href="https://beian.miit.gov.cn/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              京ICP备xxxxxxxx号
+            </a>
+          </div>
+          <p className="text-white/30 text-xs">
+            © {new Date().getFullYear()} DragonAI. 保留所有权利.
+          </p>
+        </div>
       </div>
     </div>
   )
