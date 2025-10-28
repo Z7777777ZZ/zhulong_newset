@@ -53,7 +53,7 @@ export function Footer() {
               </li>
               <li>
                 <Link 
-                  href="#pricing" 
+                  href="#pricing-section" 
                   className="text-white/60 hover:text-white text-sm transition-colors cursor-pointer"
                 >
                   定价方案

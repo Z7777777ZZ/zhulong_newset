@@ -169,7 +169,7 @@ export default function RegisterPage() {
                         />
                       </FormControl>
                     </div>
-                    <FormMessage className="text-white" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -202,7 +202,7 @@ export default function RegisterPage() {
                         {countdown > 0 ? `${countdown}s` : "获取验证码"}
                       </Button>
                     </div>
-                    <FormMessage className="text-white" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -221,7 +221,7 @@ export default function RegisterPage() {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-white" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -250,7 +250,7 @@ export default function RegisterPage() {
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                    <FormMessage className="text-white" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -279,7 +279,7 @@ export default function RegisterPage() {
                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                    <FormMessage className="text-white" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />

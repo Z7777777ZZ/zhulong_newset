@@ -191,7 +191,7 @@ export default function LoginPage() {
               type="button"
               variant="outline"
               onClick={handleGoogleLogin}
-              disabled={loading || googleLoading}
+              disabled={googleLoading}
               className="w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {googleLoading ? (

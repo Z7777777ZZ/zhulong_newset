@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { Sparkles, Clock, History, BarChart3, CreditCard, Settings, LogOut, Zap } from 'lucide-react'
 import { AuthGuard } from '@/components/providers/auth-guard'
 import { useAuth } from '@/components/providers/auth-provider'
@@ -132,15 +131,13 @@ function WorkspaceContent() {
                   </nav>
 
                   {/* 退出登录 */}
-                  <Link href="/login">
-                    <button
-                      onClick={() => logout()}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-all text-sm"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>退出登录</span>
-                    </button>
-                  </Link>
+                  <button
+                    onClick={() => logout('/')}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-all text-sm"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>退出登录</span>
+                  </button>
                 </div>
               </aside>
 

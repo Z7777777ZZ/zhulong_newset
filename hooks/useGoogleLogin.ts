@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -10,14 +10,16 @@ import { toast } from 'sonner'
  * 封装 Google Identity Services 的初始化和登录逻辑
  */
 export const useGoogleLogin = () => {
-  const { loginWithGoogle, loading } = useAuth()
+  const { loginWithGoogle } = useAuth()
   const router = useRouter()
   const isInitialized = useRef(false)
+  const [loading, setLoading] = useState(false)
 
   // 处理 Google 登录成功的回调
   const handleCredentialResponse = useCallback(
     async (response: CredentialResponse) => {
       try {
+        setLoading(true)
         // 调用后端 API 验证 Google ID Token
         await loginWithGoogle(response.credential)
         toast.success('Google 登录成功！正在跳转...', { duration: 2000 })
@@ -30,6 +32,8 @@ export const useGoogleLogin = () => {
         console.error('Google 登录失败:', error)
         const message = error instanceof Error ? error.message : 'Google 登录失败，请重试'
         toast.error(message, { duration: 4000 })
+      } finally {
+        setLoading(false)
       }
     },
     [loginWithGoogle, router]
